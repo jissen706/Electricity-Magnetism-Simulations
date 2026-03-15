@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Molecular Model of Polarization — PHYS 151</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f1419;
+      --surface: #1a2332;
+      --surface2: #243044;
+      --text: #e6edf3;
+      --text-muted: #8b9cb3;
+      --accent: #58a6ff;
+      --accent-pos: #3fb950;
+      --accent-neg: #f85149;
+      --border: #30363d;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+    .container { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem; }
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: var(--text);
+    }
+    .subtitle { color: var(--text-muted); font-size: 1rem; margin-bottom: 2rem; }
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    nav button {
+      font-family: inherit;
+      font-size: 0.9rem;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    nav button:hover { background: var(--surface2); border-color: var(--accent); }
+    nav button.active { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+    section {
+      display: none;
+      animation: fade 0.3s ease;
+    }
+    section.active { display: block; }
+    @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .card h2 { font-size: 1.25rem; margin-bottom: 0.75rem; color: var(--accent); }
+    .card p { color: var(--text-muted); margin-bottom: 0.75rem; font-size: 0.95rem; }
+    .viz-box {
+      background: #0a0e14;
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin: 1rem 0;
+      min-height: 280px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .viz-box canvas { display: block; }
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+    }
+    .controls label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      min-width: 120px;
+    }
+    input[type="range"] {
+      width: 160px;
+      height: 6px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: var(--surface2);
+      border-radius: 3px;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+    }
+    .formula {
+      font-family: 'JetBrains Mono', monospace;
+      background: var(--surface2);
+      padding: 0.5rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      margin: 0.5rem 0;
+      display: inline-block;
+    }
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-top: 0.75rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    .legend span { display: flex; align-items: center; gap: 0.35rem; }
+    .legend .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .legend .dot.pos { background: var(--accent-pos); }
+    .legend .dot.neg { background: var(--accent-neg); }
+    .legend .dot.field { background: var(--accent); }
+    .legend .dot.bound { background: #a371f7; }
+    footer { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border); font-size: 0.85rem; color: var(--text-muted); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Molecular Model of Polarization</h1>
+    <p class="subtitle">Why dielectrics increase capacitance and decrease the electric field — interactive module</p>
+
+    <nav>
+      <button data-section="free-bound" class="active">1. Free vs Bound</button>
+      <button data-section="polar-nonpolar">2. Polar vs Nonpolar</button>
+      <button data-section="bound-charges">3. Bound Surface Charges</button>
+      <button data-section="opposing-field">4. Opposing Field</button>
+    </nav>
+
+    <!-- Section 1: Free vs Bound -->
+    <section id="free-bound" class="active">
+      <div class="card">
+        <h2>Free vs. Bound Charges</h2>
+        <p><strong>Conductors:</strong> In a metal, outer electrons are detached and are "free" to move through the material.</p>
+        <p><strong>Dielectrics:</strong> In an ideal dielectric, no charges are free to move indefinitely; every electron is bound to its parent molecule.</p>
+        <div class="viz-box">
+          <canvas id="canvas-free-bound" width="800" height="280"></canvas>
+        </div>
+        <div class="controls">
+          <label>Material:</label>
+          <select id="material-type">
+            <option value="conductor">Conductor (metal)</option>
+            <option value="dielectric">Dielectric (insulator)</option>
+          </select>
+        </div>
+        <div class="legend">
+          <span><span class="dot pos"></span> Nucleus / positive</span>
+          <span><span class="dot neg"></span> Electron</span>
+          <span><span class="dot field"></span> Applied E field</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2: Polar vs Nonpolar -->
+    <section id="polar-nonpolar">
+      <div class="card">
+        <h2>Polar vs. Nonpolar Molecules</h2>
+        <p><strong>Polar molecules</strong> (e.g. H₂O) have a natural dipole; an applied field applies a torque and they align with the field.</p>
+        <p><strong>Nonpolar molecules</strong> have no permanent dipole; the field induces one by stretching the electron cloud relative to the nucleus.</p>
+        <div class="viz-box">
+          <canvas id="canvas-polar" width="800" height="280"></canvas>
+        </div>
+        <div class="controls">
+          <label>Molecule type:</label>
+          <select id="molecule-type">
+            <option value="polar">Polar (e.g. H₂O)</option>
+            <option value="nonpolar">Nonpolar (induced dipole)</option>
+          </select>
+          <label>Field strength:</label>
+          <input type="range" id="polar-field" min="0" max="100" value="70">
+        </div>
+        <div class="legend">
+          <span><span class="dot pos"></span> δ⁺</span>
+          <span><span class="dot neg"></span> δ⁻ / electron cloud</span>
+          <span><span class="dot field"></span> E applied</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 3: Bound surface charges -->
+    <section id="bound-charges">
+      <div class="card">
+        <h2>Polarization and Bound Surface Charges</h2>
+        <p>When the material is polarized, positive and negative charges shift in opposite directions. A thin layer of <strong>bound charge</strong> (σᵢ) builds up on each surface; the interior stays neutral.</p>
+        <div class="viz-box">
+          <canvas id="canvas-bound-charges" width="800" height="280"></canvas>
+        </div>
+        <div class="controls">
+          <label>Polarization strength:</label>
+          <input type="range" id="polarization-strength" min="0" max="100" value="80">
+        </div>
+        <div class="legend">
+          <span><span class="dot pos"></span> Bound + (σᵢ⁺)</span>
+          <span><span class="dot neg"></span> Bound − (σᵢ⁻)</span>
+          <span><span class="dot bound"></span> Dipoles in bulk</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 4: Opposing field -->
+    <section id="opposing-field">
+      <div class="card">
+        <h2>The Opposing Electric Field</h2>
+        <p>The bound surface charges create an <strong>induced field Eᵢ</strong> that points opposite to the original field <strong>E₀</strong>. The net field inside the dielectric is weaker:</p>
+        <p class="formula">E_net = E₀ − Eᵢ</p>
+        <div class="viz-box">
+          <canvas id="canvas-opposing" width="800" height="280"></canvas>
+        </div>
+        <div class="controls">
+          <label>E₀ (external):</label>
+          <input type="range" id="e0-slider" min="20" max="100" value="80">
+          <label>Dielectric (κ):</label>
+          <input type="range" id="kappa-slider" min="1" max="50" value="5">
+          <span id="kappa-readout" class="formula">κ = 5</span>
+        </div>
+        <div class="legend">
+          <span><span class="dot field"></span> E₀ (external)</span>
+          <span><span class="dot bound"></span> Eᵢ (induced, opposing)</span>
+          <span><span class="dot pos"></span> E_net (result)</span>
+        </div>
+      </div>
+    </section>
+
+    <footer>PHYS 151 — Dielectrics simulation. Chunk 5: Molecular Model of Polarization.</footer>
+  </div>
+
+  <script>
+    // --- Navigation ---
+    document.querySelectorAll('nav button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.section).classList.add('active');
+        requestAnimationFrame(() => { drawAll(); });
+      });
+    });
+
+    function getCanvas(id) {
+      const c = document.getElementById(id);
+      return c ? c.getContext('2d') : null;
+    }
+
+    // --- 1. Free vs Bound ---
+    function drawFreeBound() {
+      const canvas = document.getElementById('canvas-free-bound');
+      if (!canvas) return;
+      const ctx = getCanvas('canvas-free-bound');
+      const w = canvas.width, h = canvas.height;
+      ctx.fillStyle = '#0a0e14';
+      ctx.fillRect(0, 0, w, h);
+      const isConductor = document.getElementById('material-type')?.value === 'conductor';
+      const t = Date.now() / 800;
+
+      // External E field arrow (horizontal)
+      ctx.strokeStyle = '#58a6ff';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(w * 0.1, h * 0.2);
+      ctx.lineTo(w * 0.9, h * 0.2);
+      ctx.stroke();
+      ctx.font = '14px DM Sans, sans-serif';
+      ctx.fillStyle = '#8b9cb3';
+      ctx.fillText('E applied →', w * 0.72, h * 0.18);
+
+      const cx = w / 2;
+      const blockW = w * 0.5;
+      const left = cx - blockW / 2;
+      const right = cx + blockW / 2;
+      const top = h * 0.35;
+      const bottom = h * 0.85;
+      ctx.strokeStyle = '#30363d';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(left, top, blockW, bottom - top);
+      ctx.fillStyle = 'rgba(26, 35, 50, 0.8)';
+      ctx.fillRect(left, top, blockW, bottom - top);
+      ctx.fillStyle = '#8b9cb3';
+      ctx.font = '12px DM Sans, sans-serif';
+      ctx.fillText(isConductor ? 'Conductor' : 'Dielectric', cx - 35, top - 8);
+
+      const rows = 4;
+      const cols = 8;
+      const spacingX = blockW / (cols + 1);
+      const spacingY = (bottom - top) / (rows + 1);
+      for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+          const x = left + spacingX * (col + 1);
+          const y = top + spacingY * (row + 1);
+          const ox = 4 * Math.sin(t + row * 0.5 + col * 0.3);
+          const oy = 4 * Math.cos(t * 0.7 + row + col);
+          if (isConductor) {
+            ctx.fillStyle = '#3fb950';
+            ctx.beginPath();
+            ctx.arc(x + ox, y - 12, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#f85149';
+            const ex = x + 25 + 15 * Math.sin(t + col);
+            const ey = y + 8 * Math.cos(t * 1.2 + row);
+            ctx.beginPath();
+            ctx.arc(ex, ey, 4, 0, Math.PI * 2);
+            ctx.fill();
+          } else {
+            ctx.fillStyle = '#3fb950';
+            ctx.beginPath();
+            ctx.arc(x + ox, y, 6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#f85149';
+            ctx.beginPath();
+            ctx.arc(x + ox + 12, y, 5, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+      }
+    }
+
+    // --- 2. Polar vs Nonpolar ---
+    function drawPolar() {
+      const canvas = document.getElementById('canvas-polar');
+      if (!canvas) return;
+      const ctx = getCanvas('canvas-polar');
+      const w = canvas.width, h = canvas.height;
+      ctx.fillStyle = '#0a0e14';
+      ctx.fillRect(0, 0, w, h);
+      const isPolar = document.getElementById('molecule-type')?.value === 'polar';
+      const fieldVal = (document.getElementById('polar-field')?.value ?? 70) / 100;
+      const t = Date.now() / 1000;
+
+      // E field
+      ctx.strokeStyle = 'rgba(88, 166, 255, 0.9)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(w * 0.08, h / 2);
+      ctx.lineTo(w * 0.92, h / 2);
+      ctx.stroke();
+      ctx.fillStyle = '#8b9cb3';
+      ctx.font = '14px DM Sans, sans-serif';
+      ctx.fillText('E →', w * 0.82, h / 2 - 10);
+
+      const n = 5;
+      for (let i = 0; i < n; i++) {
+        const x = w * (0.2 + (i / (n - 1)) * 0.6);
+        const y = h / 2;
+        const angle = isPolar ? (fieldVal > 0.1 ? 0 : Math.PI / 2 + 0.3 * Math.sin(t)) : 0;
+        const stretch = isPolar ? 0 : fieldVal * 0.25;
+        const dx = 20 * Math.cos(angle) + 25 * stretch;
+        const dy = 20 * Math.sin(angle);
+        ctx.fillStyle = '#3fb950';
+        ctx.beginPath();
+        ctx.arc(x - dx, y - dy, 8, 0, Math.PI * 2);
+        ctx.fill();
+        if (isPolar) {
+          ctx.fillStyle = '#f85149';
+          ctx.beginPath();
+          ctx.arc(x + dx, y + dy, 6, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          ctx.fillStyle = 'rgba(248, 81, 73, 0.7)';
+          ctx.beginPath();
+          ctx.ellipse(x + dx * 0.5, y, 18 + 12 * stretch, 12, 0, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      ctx.fillStyle = '#8b9cb3';
+      ctx.font = '12px DM Sans, sans-serif';
+      ctx.fillText(isPolar ? 'Polar: dipoles align with E' : 'Nonpolar: field induces dipole', w * 0.32, h * 0.88);
+    }
+
+    // --- 3. Bound surface charges ---
+    function drawBoundCharges() {
+      const canvas = document.getElementById('canvas-bound-charges');
+      if (!canvas) return;
+      const ctx = getCanvas('canvas-bound-charges');
+      const w = canvas.width, h = canvas.height;
+      ctx.fillStyle = '#0a0e14';
+      ctx.fillRect(0, 0, w, h);
+      const strength = (document.getElementById('polarization-strength')?.value ?? 80) / 100;
+      const t = Date.now() / 600;
+
+      const left = w * 0.25;
+      const right = w * 0.75;
+      const top = h * 0.2;
+      const bottom = h * 0.8;
+      ctx.strokeStyle = '#30363d';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(left, top, right - left, bottom - top);
+      ctx.fillStyle = 'rgba(26, 35, 50, 0.9)';
+      ctx.fillRect(left, top, right - left, bottom - top);
+
+      const layer = 12;
+      const nPlus = 8 + Math.floor(strength * 12);
+      const nMinus = nPlus;
+      for (let i = 0; i < nPlus; i++) {
+        const x = left + (right - left) * (0.5 + (i / nPlus) * 0.5) + 4 * Math.sin(t + i);
+        ctx.fillStyle = '#3fb950';
+        ctx.beginPath();
+        ctx.arc(x, top + layer, 5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      for (let i = 0; i < nMinus; i++) {
+        const x = left + (right - left) * (0.5 + (i / nMinus) * 0.5) + 4 * Math.sin(t + i + 2);
+        ctx.fillStyle = '#f85149';
+        ctx.beginPath();
+        ctx.arc(x, bottom - layer, 5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.fillStyle = '#8b9cb3';
+      ctx.font = '11px DM Sans, sans-serif';
+      ctx.fillText('σᵢ⁺ bound', left, top + layer - 12);
+      ctx.fillText('σᵢ⁻ bound', left, bottom - layer + 18);
+
+      const rows = 3;
+      const cols = 6;
+      const sx = (right - left) / (cols + 1);
+      const sy = (bottom - top) / (rows + 1);
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const x = left + sx * (c + 1) + 3 * Math.sin(t + r + c);
+          const y = top + sy * (r + 1);
+          const dx = 15 * strength;
+          ctx.fillStyle = '#3fb950';
+          ctx.beginPath();
+          ctx.arc(x - dx, y, 4, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#f85149';
+          ctx.beginPath();
+          ctx.arc(x + dx, y, 4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      ctx.fillStyle = '#8b9cb3';
+      ctx.font = '12px DM Sans, sans-serif';
+      ctx.fillText('Bulk: net charge = 0', w / 2 - 55, h * 0.92);
+    }
+
+    // --- 4. Opposing field ---
+    function drawOpposing() {
+      const canvas = document.getElementById('canvas-opposing');
+      if (!canvas) return;
+      const ctx = getCanvas('canvas-opposing');
+      const w = canvas.width, h = canvas.height;
+      ctx.fillStyle = '#0a0e14';
+      ctx.fillRect(0, 0, w, h);
+      const e0Val = (document.getElementById('e0-slider')?.value ?? 80) / 100;
+      const kappa = Math.max(1.1, parseFloat(document.getElementById('kappa-slider')?.value ?? 5));
+      const e0 = 120 * e0Val;
+      const ei = e0 * (1 - 1 / kappa);
+      const eNet = e0 - ei;
+
+      const left = w * 0.2;
+      const right = w * 0.8;
+      const top = h * 0.25;
+      const bottom = h * 0.75;
+      const cx = (left + right) / 2;
+      const cy = (top + bottom) / 2;
+
+      function arrow(x, y, len, color, label) {
+        ctx.strokeStyle = color;
+        ctx.fillStyle = color;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(x - len, y);
+        ctx.lineTo(x + len, y);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x + len - 10, y - 6);
+        ctx.lineTo(x + len, y);
+        ctx.lineTo(x + len - 10, y + 6);
+        ctx.closePath();
+        ctx.fill();
+        ctx.font = '12px DM Sans, sans-serif';
+        ctx.fillText(label, x + len + 8, y + 4);
+      }
+
+      ctx.strokeStyle = '#30363d';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(left, top, right - left, bottom - top);
+      ctx.fillStyle = 'rgba(26, 35, 50, 0.7)';
+      ctx.fillRect(left, top, right - left, bottom - top);
+      ctx.fillStyle = '#8b9cb3';
+      ctx.font = '12px DM Sans, sans-serif';
+      ctx.fillText('Dielectric', cx - 28, top - 10);
+
+      const scale = 0.8;
+      arrow(cx, cy - 45, e0 * scale, '#58a6ff', 'E₀');
+      arrow(cx, cy, ei * scale, '#a371f7', 'Eᵢ (opposing)');
+      arrow(cx, cy + 45, Math.max(10, eNet) * scale, '#3fb950', 'E_net = E₀ − Eᵢ');
+    }
+
+    function drawAll() {
+      drawFreeBound();
+      drawPolar();
+      drawBoundCharges();
+      drawOpposing();
+    }
+
+    document.getElementById('material-type')?.addEventListener('change', drawFreeBound);
+    document.getElementById('molecule-type')?.addEventListener('change', drawPolar);
+    document.getElementById('polar-field')?.addEventListener('input', drawPolar);
+    document.getElementById('polarization-strength')?.addEventListener('input', drawBoundCharges);
+    document.getElementById('e0-slider')?.addEventListener('input', () => {
+      drawOpposing();
+      const k = document.getElementById('kappa-slider')?.value ?? 5;
+      const el = document.getElementById('kappa-readout');
+      if (el) el.textContent = 'κ = ' + k;
+    });
+    document.getElementById('kappa-slider')?.addEventListener('input', () => {
+      drawOpposing();
+      const k = document.getElementById('kappa-slider')?.value ?? 5;
+      const el = document.getElementById('kappa-readout');
+      if (el) el.textContent = 'κ = ' + k;
+    });
+
+    let raf;
+    function loop() {
+      const active = document.querySelector('section.active');
+      if (active) {
+        const id = active.id;
+        if (id === 'free-bound') drawFreeBound();
+        else if (id === 'polar-nonpolar') drawPolar();
+        else if (id === 'bound-charges') drawBoundCharges();
+        else if (id === 'opposing-field') drawOpposing();
+      }
+      raf = requestAnimationFrame(loop);
+    }
+    const kr = document.getElementById('kappa-readout');
+    if (kr) kr.textContent = 'κ = ' + (document.getElementById('kappa-slider')?.value ?? 5);
+    drawAll();
+    loop();
+  </script>
+</body>
+</html>
