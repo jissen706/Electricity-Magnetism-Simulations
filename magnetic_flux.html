@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Magnetic Flux & Orientation — PHYS 151</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f1419;
+      --surface: #1a2332;
+      --surface2: #243044;
+      --text: #e6edf3;
+      --text-muted: #8b9cb3;
+      --accent: #58a6ff;
+      --accent-pos: #3fb950;
+      --accent-neg: #f85149;
+      --accent-purple: #a371f7;
+      --accent-amber: #d29922;
+      --border: #30363d;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+    .container { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem; }
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: var(--text);
+    }
+    .subtitle { color: var(--text-muted); font-size: 1rem; margin-bottom: 2rem; }
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    nav button {
+      font-family: inherit;
+      font-size: 0.9rem;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    nav button:hover { background: var(--surface2); border-color: var(--accent); }
+    nav button.active { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+    section {
+      display: none;
+      animation: fade 0.3s ease;
+    }
+    section.active { display: block; }
+    @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .card h2 { font-size: 1.25rem; margin-bottom: 0.75rem; color: var(--accent); }
+    .card p { color: var(--text-muted); margin-bottom: 0.75rem; font-size: 0.95rem; }
+    .viz-box {
+      background: #0a0e14;
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin: 1rem 0;
+      min-height: 320px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .viz-box canvas { display: block; max-width: 100%; }
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+    }
+    .controls label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      min-width: 110px;
+    }
+    input[type="range"] {
+      width: 160px;
+      height: 6px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: var(--surface2);
+      border-radius: 3px;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+    }
+    .formula {
+      font-family: 'JetBrains Mono', monospace;
+      background: var(--surface2);
+      padding: 0.5rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      margin: 0.5rem 0;
+      display: inline-block;
+    }
+    .readout-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+    .readout {
+      font-family: 'JetBrains Mono', monospace;
+      background: var(--surface2);
+      padding: 0.5rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      color: var(--text);
+    }
+    .readout .lbl { color: var(--text-muted); margin-right: 0.4rem; }
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-top: 0.75rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    .legend span { display: flex; align-items: center; gap: 0.35rem; }
+    .legend .swatch { width: 16px; height: 4px; border-radius: 2px; }
+    .legend .swatch.b { background: var(--accent); }
+    .legend .swatch.a { background: var(--accent-purple); }
+    .legend .swatch.loop { background: var(--accent-amber); }
+    .legend .swatch.flux { background: var(--accent-pos); }
+    footer { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border); font-size: 0.85rem; color: var(--text-muted); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Magnetic Flux &amp; Orientation</h1>
+    <p class="subtitle">How the angle between <strong>B</strong> and the loop's area vector <strong>A</strong> changes the flux Φ = <strong>B</strong>·<strong>A</strong> = BA cos θ</p>
+
+    <nav>
+      <button data-section="orientation" class="active">1. Flux Orientation</button>
+      <button data-section="rotating">2. Rotating Loop (Φ vs t)</button>
+    </nav>
+
+    <!-- Section 1: Flux Orientation -->
+    <section id="orientation" class="active">
+      <div class="card">
+        <h2>Flux through a tilted loop</h2>
+        <p>Magnetic flux Φ depends on three things: the field strength <strong>B</strong>, the loop area <em>A</em>, and the angle θ between <strong>B</strong> and the loop's area vector <strong>A</strong> (the unit normal to the loop face).</p>
+        <p class="formula">Φ = ∫ <strong>B</strong> · d<strong>A</strong> &nbsp; → &nbsp; (uniform B) &nbsp; Φ = B A cos θ</p>
+        <p>Tilt the loop with the θ slider. When θ = 0° the loop face is perpendicular to <strong>B</strong> (max flux). When θ = 90° the loop is edge-on to <strong>B</strong> (zero flux). The orange highlighted field lines are the ones that actually thread the loop.</p>
+        <div class="viz-box">
+          <canvas id="canvas-orientation" width="800" height="360"></canvas>
+        </div>
+        <div class="controls">
+          <label>θ (angle):</label>
+          <input type="range" id="theta-slider" min="0" max="180" value="30">
+          <label>|B| (field):</label>
+          <input type="range" id="b-slider" min="10" max="100" value="70">
+          <label>Area A:</label>
+          <input type="range" id="area-slider" min="20" max="100" value="70">
+        </div>
+        <div class="readout-row">
+          <span class="readout"><span class="lbl">θ =</span><span id="theta-out">30°</span></span>
+          <span class="readout"><span class="lbl">cos θ =</span><span id="cos-out">0.866</span></span>
+          <span class="readout"><span class="lbl">B =</span><span id="b-out">0.70</span> T</span>
+          <span class="readout"><span class="lbl">A =</span><span id="a-out">0.70</span> m²</span>
+          <span class="readout"><span class="lbl">Φ =</span><span id="flux-out">0.424</span> Wb</span>
+        </div>
+        <div class="legend">
+          <span><span class="swatch b"></span> B field</span>
+          <span><span class="swatch a"></span> Area vector A (loop normal)</span>
+          <span><span class="swatch loop"></span> Loop (edge view)</span>
+          <span><span class="swatch flux"></span> Field lines threading the loop</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2: Rotating loop -->
+    <section id="rotating">
+      <div class="card">
+        <h2>Rotating loop: Φ traces a cosine</h2>
+        <p>Now spin the loop at a steady angular speed ω. Because Φ = BA cos θ and θ = ωt, the flux oscillates as a cosine. This is the setup behind every AC generator — and the time-derivative is the EMF that Faraday's law predicts.</p>
+        <p class="formula">θ(t) = ω t &nbsp; ⟹ &nbsp; Φ(t) = B A cos(ω t)</p>
+        <div class="viz-box">
+          <canvas id="canvas-rotating" width="800" height="360"></canvas>
+        </div>
+        <div class="controls">
+          <label>ω (rotation):</label>
+          <input type="range" id="omega-slider" min="0" max="100" value="40">
+          <label>|B| (field):</label>
+          <input type="range" id="b2-slider" min="10" max="100" value="70">
+          <label>Area A:</label>
+          <input type="range" id="area2-slider" min="20" max="100" value="70">
+        </div>
+        <div class="readout-row">
+          <span class="readout"><span class="lbl">θ(t) =</span><span id="theta2-out">0°</span></span>
+          <span class="readout"><span class="lbl">Φ(t) =</span><span id="flux2-out">0.000</span> Wb</span>
+          <span class="readout"><span class="lbl">Φ_max =</span><span id="fluxmax-out">0.490</span> Wb</span>
+        </div>
+        <div class="legend">
+          <span><span class="swatch b"></span> B field</span>
+          <span><span class="swatch a"></span> Area vector A</span>
+          <span><span class="swatch loop"></span> Loop</span>
+          <span><span class="swatch flux"></span> Φ(t) trace</span>
+        </div>
+      </div>
+    </section>
+
+    <footer>PHYS 151 — Electricity &amp; Magnetism. Magnetic flux module.</footer>
+  </div>
+
+  <script>
+    // --- Navigation ---
+    document.querySelectorAll('nav button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.section).classList.add('active');
+      });
+    });
+
+    function getCtx(id) {
+      const c = document.getElementById(id);
+      return c ? c.getContext('2d') : null;
+    }
+
+    // Shared helper: arrow head
+    function drawArrowHead(ctx, x, y, dirX, dirY, size) {
+      const len = Math.hypot(dirX, dirY) || 1;
+      const ux = dirX / len, uy = dirY / len;
+      const px = -uy, py = ux; // perpendicular
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x - ux * size + px * size * 0.5, y - uy * size + py * size * 0.5);
+      ctx.lineTo(x - ux * size - px * size * 0.5, y - uy * size - py * size * 0.5);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    // Draw a horizontal B-field as rows of arrows
+    function drawBFieldArrows(ctx, w, h, opts) {
+      const rows = opts.rows ?? 7;
+      const cols = opts.cols ?? 12;
+      const margin = opts.margin ?? 30;
+      const highlightFn = opts.highlightFn; // (rowFrac, colFrac) -> bool
+      const baseColor = opts.color ?? '#3a6fb5';
+      const hiColor = opts.hiColor ?? '#3fb950';
+      ctx.lineWidth = 2;
+      for (let r = 0; r < rows; r++) {
+        const y = margin + (h - 2 * margin) * (r + 0.5) / rows;
+        for (let c = 0; c < cols; c++) {
+          const x0 = margin + (w - 2 * margin) * c / cols;
+          const x1 = margin + (w - 2 * margin) * (c + 0.85) / cols;
+          const isHi = highlightFn ? highlightFn(r / (rows - 1 || 1), c / (cols - 1 || 1), y) : false;
+          ctx.strokeStyle = isHi ? hiColor : baseColor;
+          ctx.fillStyle = isHi ? hiColor : baseColor;
+          ctx.beginPath();
+          ctx.moveTo(x0, y);
+          ctx.lineTo(x1, y);
+          ctx.stroke();
+          drawArrowHead(ctx, x1, y, 1, 0, 7);
+        }
+      }
+    }
+
+    // --- 1. Orientation ---
+    function drawOrientation() {
+      const canvas = document.getElementById('canvas-orientation');
+      if (!canvas) return;
+      const ctx = getCtx('canvas-orientation');
+      const w = canvas.width, h = canvas.height;
+      ctx.fillStyle = '#0a0e14';
+      ctx.fillRect(0, 0, w, h);
+
+      const thetaDeg = parseFloat(document.getElementById('theta-slider').value);
+      const theta = thetaDeg * Math.PI / 180;
+      const bMag = parseFloat(document.getElementById('b-slider').value) / 100;
+      const aMag = parseFloat(document.getElementById('area-slider').value) / 100;
+
+      // Loop center
+      const cx = w / 2, cy = h / 2 + 10;
+      // Loop visual radius (half-length of the edge line)
+      const loopHalfLen = 30 + 80 * aMag;
+      // Loop's "extent perpendicular to view" — used to figure out which field rows pass through it
+      // We'll draw the loop as a tilted line of length 2*loopHalfLen.
+      // Its endpoints, where the loop line is rotated by (90° - θ) from horizontal:
+      const loopAngle = Math.PI / 2 - theta; // angle of loop line from horizontal
+      const ex = Math.cos(loopAngle) * loopHalfLen;
+      const ey = Math.sin(loopAngle) * loopHalfLen;
+      // The loop line spans (cx - ex, cy - ey) to (cx + ex, cy + ey).
+      // Project onto y-axis: vertical extent = |ey| centered at cy.
+      const projHalf = Math.abs(ey);
+
+      // 1) Draw B-field arrows behind everything, highlighting those whose y is within the projected vertical extent of the loop AND whose x is within the loop's horizontal range
+      drawBFieldArrows(ctx, w, h, {
+        rows: 9,
+        cols: 14,
+        margin: 36,
+        color: '#3a6fb5',
+        hiColor: '#3fb950',
+        highlightFn: (rFrac, cFrac, y) => {
+          // Highlight if the field line at this y passes between the loop endpoints' y range
+          // and within a horizontal band centered on the loop
+          const dy = y - cy;
+          const xCenter = w / 2;
+          const xExtent = Math.abs(ex) + 60; // a little past the tilted loop
+          const xPos = 36 + (w - 72) * cFrac;
+          if (Math.abs(dy) > projHalf - 1) return false;
+          if (Math.abs(xPos - xCenter) > xExtent) return false;
+          return true;
+        }
+      });
+
+      // 2) Loop drawn as a tilted ellipse for a 3D feel
+      // Major axis along the loop line; minor axis is the "depth" we don't see (use a slim minor)
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(loopAngle);
+      ctx.strokeStyle = '#d29922';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      // ellipse: rx = loopHalfLen (along loop), ry = small thickness for visual loop
+      ctx.ellipse(0, 0, loopHalfLen, 8, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+
+      // 3) Area vector A (perpendicular to loop, in plane of screen, length scales with A)
+      const aLen = 50 + 50 * aMag;
+      const ax = Math.cos(theta) * aLen;
+      const ay = -Math.sin(theta) * aLen; // negative because canvas y grows downward but we want θ measured CCW from +x for visual clarity
+      ctx.strokeStyle = '#a371f7';
+      ctx.fillStyle = '#a371f7';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + ax, cy + ay);
+      ctx.stroke();
+      drawArrowHead(ctx, cx + ax, cy + ay, ax, ay, 12);
+      ctx.font = '14px DM Sans, sans-serif';
+      ctx.fillText('A', cx + ax + 8, cy + ay - 4);
+
+      // 4) B reference arrow (from center) sized by bMag
+      const bLen = 50 + 70 * bMag;
+      ctx.strokeStyle = '#58a6ff';
+      ctx.fillStyle = '#58a6ff';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + bLen, cy);
+      ctx.stroke();
+      drawArrowHead(ctx, cx + bLen, cy, 1, 0, 12);
+      ctx.fillText('B', cx + bLen + 8, cy + 4);
+
+      // 5) Angle arc between B and A
+      const arcR = 28;
+      ctx.strokeStyle = '#e6edf3';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      // canvas arc: angle measured CW from +x. Our θ visually goes CCW (upward), so use -theta.
+      ctx.arc(cx, cy, arcR, -theta, 0, theta < 0);
+      ctx.stroke();
+      ctx.fillStyle = '#e6edf3';
+      ctx.font = '13px DM Sans, sans-serif';
+      const labelAngle = -theta / 2;
+      ctx.fillText('θ', cx + Math.cos(labelAngle) * (arcR + 12) - 4, cy + Math.sin(labelAngle) * (arcR + 12) + 5);
+
+      // 6) Top label: B field reminder
+      ctx.fillStyle = '#8b9cb3';
+      ctx.font = '13px DM Sans, sans-serif';
+      ctx.fillText('Uniform B field →', 36, 24);
+
+      // 7) Update readouts
+      const cosT = Math.cos(theta);
+      const flux = bMag * aMag * cosT;
+      document.getElementById('theta-out').textContent = thetaDeg.toFixed(0) + '°';
+      document.getElementById('cos-out').textContent = cosT.toFixed(3);
+      document.getElementById('b-out').textContent = bMag.toFixed(2);
+      document.getElementById('a-out').textContent = aMag.toFixed(2);
+      document.getElementById('flux-out').textContent = flux.toFixed(3);
+
+      // 8) Mini flux bar (bottom right)
+      const barX = w - 180, barY = h - 36, barW = 140, barH = 16;
+      ctx.strokeStyle = '#30363d';
+      ctx.strokeRect(barX, barY, barW, barH);
+      ctx.fillStyle = '#243044';
+      ctx.fillRect(barX, barY, barW, barH);
+      const fluxFrac = Math.abs(flux) / Math.max(0.0001, bMag * aMag);
+      ctx.fillStyle = flux >= 0 ? '#3fb950' : '#f85149';
+      ctx.fillRect(barX, barY, barW * fluxFrac, barH);
+      ctx.fillStyle = '#8b9cb3';
+      ctx.font = '11px JetBrains Mono, monospace';
+      ctx.fillText('|Φ| / Φ_max', barX, barY - 4);
+    }
+
+    // --- 2. Rotating loop ---
+    let rotState = {
+      theta: 0,
+      lastT: null,
+      trace: [], // {t, flux}
+      tNow: 0
+    };
+
+    function drawRotating() {
+      const canvas = document.getElementById('canvas-rotating');
+      if (!canvas) return;
+      const ctx = getCtx('canvas-rotating');
+      const w = canvas.width, h = canvas.height;
+      ctx.fillStyle = '#0a0e14';
+      ctx.fillRect(0, 0, w, h);
+
+      const omega = parseFloat(document.getElementById('omega-slider').value) / 100 * 2.0; // rad/sec
+      const bMag = parseFloat(document.getElementById('b2-slider').value) / 100;
+      const aMag = parseFloat(document.getElementById('area2-slider').value) / 100;
+
+      // Time stepping
+      const now = performance.now() / 1000;
+      if (rotState.lastT == null) rotState.lastT = now;
+      const dt = Math.min(0.05, now - rotState.lastT);
+      rotState.lastT = now;
+      rotState.theta += omega * dt;
+      rotState.tNow += dt;
+
+      // Layout: left half = visual loop scene, right half = Φ(t) trace
+      const sceneW = w * 0.5;
+      const traceX0 = sceneW + 10, traceY0 = 30, traceW = w - sceneW - 30, traceH = h - 60;
+
+      // ===== Left: scene =====
+      const cx = sceneW / 2, cy = h / 2;
+      const loopHalfLen = 30 + 80 * aMag;
+      const theta = rotState.theta;
+      const loopAngle = Math.PI / 2 - theta;
+      const ey = Math.sin(loopAngle) * loopHalfLen;
+      const projHalf = Math.abs(ey);
+
+      // B field over only the left half
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0, 0, sceneW, h);
+      ctx.clip();
+      const rows = 9, cols = 9, margin = 30;
+      ctx.lineWidth = 2;
+      for (let r = 0; r < rows; r++) {
+        const y = margin + (h - 2 * margin) * (r + 0.5) / rows;
+        for (let c = 0; c < cols; c++) {
+          const x0 = margin + (sceneW - 2 * margin) * c / cols;
+          const x1 = margin + (sceneW - 2 * margin) * (c + 0.85) / cols;
+          const dy = y - cy;
+          const xCenter = sceneW / 2;
+          const xExtent = Math.abs(Math.cos(loopAngle) * loopHalfLen) + 60;
+          const isHi = Math.abs(dy) < projHalf - 1 && Math.abs(((x0 + x1) / 2) - xCenter) < xExtent;
+          ctx.strokeStyle = isHi ? '#3fb950' : '#3a6fb5';
+          ctx.fillStyle = isHi ? '#3fb950' : '#3a6fb5';
+          ctx.beginPath();
+          ctx.moveTo(x0, y);
+          ctx.lineTo(x1, y);
+          ctx.stroke();
+          drawArrowHead(ctx, x1, y, 1, 0, 7);
+        }
+      }
+
+      // Loop ellipse
+      ctx.translate(cx, cy);
+      ctx.rotate(loopAngle);
+      ctx.strokeStyle = '#d29922';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, loopHalfLen, 8, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+
+      // A vector
+      const aLen = 50 + 50 * aMag;
+      const ax = Math.cos(theta) * aLen;
+      const ay = -Math.sin(theta) * aLen;
+      ctx.strokeStyle = '#a371f7';
+      ctx.fillStyle = '#a371f7';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + ax, cy + ay);
+      ctx.stroke();
+      drawArrowHead(ctx, cx + ax, cy + ay, ax, ay, 12);
+      ctx.font = '14px DM Sans, sans-serif';
+      ctx.fillText('A', cx + ax + 8, cy + ay - 4);
+
+      // ===== Right: trace =====
+      // Trim trace to last N seconds
+      const flux = bMag * aMag * Math.cos(theta);
+      const fluxMax = bMag * aMag;
+      rotState.trace.push({ t: rotState.tNow, flux: flux });
+      const TRACE_WINDOW = 6.0;
+      while (rotState.trace.length && rotState.tNow - rotState.trace[0].t > TRACE_WINDOW) {
+        rotState.trace.shift();
+      }
+
+      // Trace area background
+      ctx.fillStyle = '#0d141c';
+      ctx.fillRect(traceX0, traceY0, traceW, traceH);
+      ctx.strokeStyle = '#30363d';
+      ctx.strokeRect(traceX0, traceY0, traceW, traceH);
+
+      // Axes
+      ctx.strokeStyle = '#243044';
+      ctx.lineWidth = 1;
+      const midY = traceY0 + traceH / 2;
+      ctx.beginPath();
+      ctx.moveTo(traceX0, midY);
+      ctx.lineTo(traceX0 + traceW, midY);
+      ctx.stroke();
+
+      // Y-axis labels
+      ctx.fillStyle = '#8b9cb3';
+      ctx.font = '11px JetBrains Mono, monospace';
+      const yScale = (traceH / 2) * 0.85; // pixels per unit flux (max == bMag*aMag <= 1)
+      const fmaxY = midY - yScale * 1.0;
+      const fminY = midY + yScale * 1.0;
+      ctx.fillText('+Φ_max', traceX0 + 4, fmaxY + 12);
+      ctx.fillText('−Φ_max', traceX0 + 4, fminY - 4);
+      ctx.fillText('0', traceX0 + 4, midY - 3);
+      ctx.fillText('t →', traceX0 + traceW - 26, midY + 12);
+      ctx.fillStyle = '#e6edf3';
+      ctx.font = '12px DM Sans, sans-serif';
+      ctx.fillText('Φ(t)', traceX0 + traceW / 2 - 14, traceY0 + 14);
+
+      // Plot trace
+      if (rotState.trace.length > 1) {
+        ctx.strokeStyle = '#3fb950';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (let i = 0; i < rotState.trace.length; i++) {
+          const pt = rotState.trace[i];
+          const xFrac = (pt.t - (rotState.tNow - TRACE_WINDOW)) / TRACE_WINDOW;
+          const px = traceX0 + xFrac * traceW;
+          const py = midY - pt.flux * yScale;
+          if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+
+        // Current value dot
+        const last = rotState.trace[rotState.trace.length - 1];
+        const lastX = traceX0 + traceW; // newest at right edge
+        const lastY = midY - last.flux * yScale;
+        ctx.fillStyle = '#3fb950';
+        ctx.beginPath();
+        ctx.arc(lastX - 1, lastY, 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Readouts
+      const thetaWrapped = ((rotState.theta % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+      document.getElementById('theta2-out').textContent = (thetaWrapped * 180 / Math.PI).toFixed(0) + '°';
+      document.getElementById('flux2-out').textContent = flux.toFixed(3);
+      document.getElementById('fluxmax-out').textContent = fluxMax.toFixed(3);
+    }
+
+    // Wire up sliders for tab 1
+    ['theta-slider', 'b-slider', 'area-slider'].forEach(id => {
+      document.getElementById(id).addEventListener('input', drawOrientation);
+    });
+
+    // Animation loop
+    function loop() {
+      const active = document.querySelector('section.active');
+      if (active) {
+        if (active.id === 'orientation') drawOrientation();
+        else if (active.id === 'rotating') drawRotating();
+      }
+      requestAnimationFrame(loop);
+    }
+    drawOrientation();
+    loop();
+  </script>
+</body>
+</html>
