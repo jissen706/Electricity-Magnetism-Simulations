@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lenz's Law — PHYS 151</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f1419;
+      --surface: #1a2332;
+      --surface2: #243044;
+      --text: #e6edf3;
+      --text-muted: #8b9cb3;
+      --accent: #58a6ff;
+      --accent-pos: #3fb950;
+      --accent-neg: #f85149;
+      --accent-purple: #a371f7;
+      --accent-amber: #d29922;
+      --border: #30363d;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+    .container { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem; }
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: var(--text);
+    }
+    .subtitle { color: var(--text-muted); font-size: 1rem; margin-bottom: 2rem; }
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    nav button {
+      font-family: inherit;
+      font-size: 0.9rem;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    nav button:hover { background: var(--surface2); border-color: var(--accent); }
+    nav button.active { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+    section {
+      display: none;
+      animation: fade 0.3s ease;
+    }
+    section.active { display: block; }
+    @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .card h2 { font-size: 1.25rem; margin-bottom: 0.75rem; color: var(--accent); }
+    .card p { color: var(--text-muted); margin-bottom: 0.75rem; font-size: 0.95rem; }
+    .viz-box {
+      background: #0a0e14;
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin: 1rem 0;
+      min-height: 320px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .viz-box canvas { display: block; max-width: 100%; }
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+    }
+    .controls label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      min-width: 110px;
+    }
+    input[type="range"] {
+      width: 160px;
+      height: 6px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: var(--surface2);
+      border-radius: 3px;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+    }
+    .btn {
+      font-family: inherit;
+      font-size: 0.85rem;
+      padding: 0.4rem 0.9rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .btn:hover { background: var(--surface); border-color: var(--accent); }
+    .btn.toggled { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+    .formula {
+      font-family: 'JetBrains Mono', monospace;
+      background: var(--surface2);
+      padding: 0.5rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      margin: 0.5rem 0;
+      display: inline-block;
+    }
+    .readout-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+    .readout {
+      font-family: 'JetBrains Mono', monospace;
+      background: var(--surface2);
+      padding: 0.5rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      color: var(--text);
+    }
+    .readout .lbl { color: var(--text-muted); margin-right: 0.4rem; }
+    .readout.pos { color: var(--accent-pos); }
+    .readout.neg { color: var(--accent-neg); }
+    .readout.zero { color: var(--text-muted); }
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-top: 0.75rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    .legend span { display: flex; align-items: center; gap: 0.35rem; }
+    .legend .swatch { width: 16px; height: 4px; border-radius: 2px; }
+    .legend .swatch.b { background: var(--accent); }
+    .legend .swatch.induced { background: var(--accent-pos); }
+    .legend .swatch.opposing { background: var(--accent-neg); }
+    .legend .swatch.loop { background: var(--accent-amber); }
+    .legend .swatch.npole { background: #f85149; }
+    .legend .swatch.spole { background: #58a6ff; }
+    .key-idea {
+      background: var(--surface2);
+      border-left: 3px solid var(--accent-amber);
+      padding: 0.6rem 0.9rem;
+      border-radius: 4px;
+      color: var(--text);
+      font-size: 0.92rem;
+      margin: 0.75rem 0;
+    }
+    footer { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border); font-size: 0.85rem; color: var(--text-muted); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Lenz's Law</h1>
+    <p class="subtitle">The induced current flows in whatever direction creates a magnetic field that <em>opposes the change</em> in flux.</p>
+
+    <nav>
+      <button data-section="magnet" class="active">1. Bar Magnet &amp; Loop</button>
+      <button data-section="region">2. Loop in/out of a B-field Region</button>
+    </nav>
+
+    <!-- Section 1: Bar magnet and loop -->
+    <section id="magnet" class="active">
+      <div class="card">
+        <h2>Move a magnet toward a loop</h2>
+        <p>Push the bar magnet toward the loop and watch what the loop does. Flux through the loop changes, so a current is induced — and its direction is whatever makes the loop's <em>own</em> magnetic field push back against that change.</p>
+        <p class="formula">ε = −dΦ/dt &nbsp; ⟹ &nbsp; I flows in the direction whose B-field opposes ΔΦ</p>
+        <div class="key-idea">
+          As the N pole approaches: the loop's induced current makes the near face act like an N pole — pushing the magnet away. Pull it back out and the loop becomes an S pole — pulling the magnet back. Either way, the loop "fights" the change.
+        </div>
+        <div class="viz-box">
+          <canvas id="canvas-magnet" width="800" height="360"></canvas>
+        </div>
+        <div class="controls">
+          <label>magnet position:</label>
+          <input type="range" id="mag-pos" min="0" max="100" value="80">
+          <button class="btn" id="mag-play">▶ auto-oscillate</button>
+          <button class="btn" id="mag-flip">flip pole (N ↔ S faces loop)</button>
+        </div>
+        <div class="readout-row">
+          <span class="readout"><span class="lbl">Φ =</span><span id="mag-flux">0.000</span></span>
+          <span class="readout" id="mag-dflux-readout"><span class="lbl">dΦ/dt =</span><span id="mag-dflux">0.000</span></span>
+          <span class="readout" id="mag-curr-readout"><span class="lbl">induced I:</span><span id="mag-curr">none</span></span>
+          <span class="readout"><span class="lbl">loop's near face acts like:</span><span id="mag-pole">—</span></span>
+        </div>
+        <div class="legend">
+          <span><span class="swatch npole"></span> N pole</span>
+          <span><span class="swatch spole"></span> S pole</span>
+          <span><span class="swatch b"></span> Magnet's B-field lines</span>
+          <span><span class="swatch loop"></span> Loop</span>
+          <span><span class="swatch induced"></span> Induced current direction</span>
+          <span><span class="swatch opposing"></span> Loop's induced B (opposes ΔΦ)</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2: Loop sliding through a B-region -->
+    <section id="region">
+      <div class="card">
+        <h2>Slide a loop through a B-field region</h2>
+        <p>The blue rectangle is a region of uniform <strong>B</strong> pointing into the page (the × marks). Slide the loop across it. Current only flows while the flux is <em>changing</em> — so only at the entry and exit edges. Inside the region (and fully outside) the flux is constant: no EMF, no current.</p>
+        <p class="formula">Φ = B · A_inside(x) &nbsp; ⟹ &nbsp; I ∝ −dΦ/dt</p>
+        <div class="key-idea">
+          Entering: flux into the page is growing. The loop fights it by driving a CCW current — that current's B (right-hand rule) points <em>out</em> of the page. Exiting: flux is shrinking. The loop tries to keep it, so current reverses to CW — its B points <em>into</em> the page.
+        </div>
+        <div class="viz-box">
+          <canvas id="canvas-region" width="800" height="360"></canvas>
+        </div>
+        <div class="controls">
+          <label>loop position x:</label>
+          <input type="range" id="reg-pos" min="0" max="1000" value="0">
+          <button class="btn" id="reg-play">▶ auto-slide</button>
+          <label style="min-width:60px">speed:</label>
+          <input type="range" id="reg-speed" min="10" max="100" value="40">
+        </div>
+        <div class="readout-row">
+          <span class="readout"><span class="lbl">status:</span><span id="reg-status">outside</span></span>
+          <span class="readout"><span class="lbl">A_inside =</span><span id="reg-area">0.00</span></span>
+          <span class="readout"><span class="lbl">Φ =</span><span id="reg-flux">0.000</span></span>
+          <span class="readout" id="reg-dflux-readout"><span class="lbl">dΦ/dt =</span><span id="reg-dflux">0.000</span></span>
+          <span class="readout" id="reg-curr-readout"><span class="lbl">induced I:</span><span id="reg-curr">none</span></span>
+        </div>
+        <div class="legend">
+          <span><span class="swatch b"></span> External B (into page, ×)</span>
+          <span><span class="swatch loop"></span> Loop</span>
+          <span><span class="swatch induced"></span> Induced current</span>
+          <span><span class="swatch opposing"></span> Loop's induced B</span>
+        </div>
+      </div>
+    </section>
+
+    <footer>PHYS 151 — Electricity &amp; Magnetism. Lenz's Law module.</footer>
+  </div>
+
+  <script>
+    // --- Navigation ---
+    document.querySelectorAll('nav button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.section).classList.add('active');
+      });
+    });
+
+    function getCtx(id) {
+      const c = document.getElementById(id);
+      return c ? c.getContext('2d') : null;
+    }
+
+    function drawArrowHead(ctx, x, y, dirX, dirY, size) {
+      const len = Math.hypot(dirX, dirY) || 1;
+      const ux = dirX / len, uy = dirY / len;
+      const px = -uy, py = ux;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x - ux * size + px * size * 0.5, y - uy * size + py * size * 0.5);
+      ctx.lineTo(x - ux * size - px * size * 0.5, y - uy * size - py * size * 0.5);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    // ============================================================
+    // SECTION 1: Bar magnet & loop
+    // ============================================================
+    let magState = {
+      pos: 0.8,           // 0 = touching loop, 1 = far away (slider value / 100)
+      lastPos: 0.8,
+      flux: 0,
+      lastFlux: 0,
+      dflux: 0,
+      polarity: +1,       // +1 = N faces loop, -1 = S faces loop
+      auto: false,
+      autoT: 0,
+      lastT: null
+    };
+
+    document.getElementById('mag-pos').addEventListener('input', (e) => {
+      magState.auto = false;
+      document.getElementById('mag-play').classList.remove('toggled');
+      document.getElementById('mag-play').textContent = '▶ auto-oscillate';
+      magState.pos = parseFloat(e.target.value) / 100;
+    });
+    document.getElementById('mag-play').addEventListener('click', () => {
+      magState.auto = !magState.auto;
+      const btn = document.getElementById('mag-play');
+      btn.classList.toggle('toggled', magState.auto);
+      btn.textContent = magState.auto ? '⏸ pause' : '▶ auto-oscillate';
+    });
+    document.getElementById('mag-flip').addEventListener('click', () => {
+      magState.polarity *= -1;
+    });
+
+    function fluxFromMagnet(pos, polarity) {
+      // Smooth dipole-ish falloff: largest |Φ| near the loop, decays fast.
+      // pos is 0..1 with 0 = touching the loop face.
+      // Use a + (b/(d+c)^2) style so it stays finite and monotonic.
+      const d = pos;
+      return polarity * 1.0 / Math.pow(d * 2.5 + 0.25, 2);
+    }
+
+    function drawMagnetScene() {
+      const canvas = document.getElementById('canvas-magnet');
+      if (!canvas) return;
+      const ctx = getCtx('canvas-magnet');
+      const w = canvas.width, h = canvas.height;
+      ctx.fillStyle = '#0a0e14';
+      ctx.fillRect(0, 0, w, h);
+
+      // Time stepping
+      const now = performance.now() / 1000;
+      if (magState.lastT == null) magState.lastT = now;
+      const dt = Math.min(0.05, now - magState.lastT);
+      magState.lastT = now;
+
+      // Auto motion: oscillate position between 0.05 and 0.95
+      if (magState.auto) {
+        magState.autoT += dt;
+        magState.pos = 0.5 + 0.45 * Math.sin(magState.autoT * 1.4);
+        document.getElementById('mag-pos').value = (magState.pos * 100).toFixed(0);
+      }
+
+      // Compute flux & dΦ/dt
+      magState.flux = fluxFromMagnet(magState.pos, magState.polarity);
+      if (dt > 0.0005) {
+        magState.dflux = (magState.flux - magState.lastFlux) / dt;
+      }
+      magState.lastFlux = magState.flux;
+
+      // ===== Layout =====
+      // Loop on the LEFT side, drawn as an ellipse (face mostly visible to viewer)
+      const loopCx = w * 0.28, loopCy = h * 0.5;
+      const loopRy = 90;       // vertical "radius" of the visible face
+      const loopRxFront = 28;  // horizontal squish (oblique view)
+
+      // Magnet on the RIGHT, slides horizontally based on pos
+      const magMinX = loopCx + loopRxFront + 30;   // closest position
+      const magMaxX = w - 110;                     // farthest position
+      const magCenterX = magMinX + (magMaxX - magMinX) * magState.pos;
+      const magCy = loopCy;
+      const magW = 90, magH = 28;
+
+      // ===== 1. Magnetic field lines from the bar magnet =====
+      // Draw curved field lines emanating from the near face (left end of magnet).
+      // Polarity flips: when polarity = +1, N faces loop -> field exits from left end of magnet (toward loop).
+      drawDipoleFieldLines(ctx, magCenterX, magCy, magW, magH, magState.polarity, loopCx);
+
+      // ===== 2. The loop (ellipse) =====
+      ctx.save();
+      ctx.strokeStyle = '#d29922';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.ellipse(loopCx, loopCy, loopRxFront, loopRy, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+
+      // ===== 3. Induced current arrows on the loop (animated chase) =====
+      // Determine direction: I_sign = -sign(dΦ/dt).
+      // Convention: define +Φ as flux pointing in +x (toward the loop from magnet's N side, i.e., to the LEFT of canvas).
+      //   When N approaches loop (polarity=+1, pos decreasing), magnet's field at loop points LEFT (toward loop's far side) -> let's call that +Φ growing.
+      //   To oppose, induced B in the loop should point RIGHT (toward magnet) -> by right-hand rule, viewing the loop face from the magnet (right side), current is CCW.
+      //   In our oblique view (we see the loop's face from slightly to the right), CCW-as-seen-from-magnet means the arrows should circulate so that the front edge of ellipse moves DOWN if induced B points right (out of page in this 2D plane projection).
+      // Simpler approach: compute the sign of induced current relative to "front edge moves up" and animate accordingly.
+      const dfluxThreshold = 0.005;
+      let currentSign = 0; // +1 = "front edge goes up" (= induced B to the right, toward magnet)
+      let inducedB = 0;    // +1 = induced B points RIGHT (toward magnet); -1 = points LEFT
+      let nearPole = '—';
+
+      if (Math.abs(magState.dflux) > dfluxThreshold) {
+        // Convention: +Φ = flux through loop pointing LEFT (away from magnet, toward loop's far face).
+        // fluxFromMagnet returns +Φ when polarity=+1 (N facing loop, field at loop points LEFT).
+        // Approaching N: dΦ/dt > 0. Induced B should oppose -> point RIGHT (toward magnet).
+        // Receding N:    dΦ/dt < 0. Induced B should oppose decrease -> point LEFT (sustain).
+        // With +inducedB = "points right toward magnet": inducedB = +sign(dΦ/dt).
+        inducedB = Math.sign(magState.dflux);
+        currentSign = inducedB; // animation direction
+        // Right (magnet-facing) face of loop: N pole when induced B inside loop points RIGHT.
+        nearPole = inducedB > 0 ? 'N pole' : 'S pole';
+      }
+
+      // Animate current arrows along the ellipse
+      magState.animPhase = (magState.animPhase || 0) + dt * currentSign * 3.0;
+      const numArrows = 6;
+      ctx.fillStyle = '#3fb950';
+      ctx.strokeStyle = '#3fb950';
+      ctx.lineWidth = 3;
+      for (let i = 0; i < numArrows; i++) {
+        const phase = (i / numArrows) * Math.PI * 2 + magState.animPhase;
+        // Parametric ellipse with phase
+        const ex = loopCx + loopRxFront * Math.cos(phase);
+        const ey = loopCy + loopRy * Math.sin(phase);
+        // Tangent direction
+        const tx = -loopRxFront * Math.sin(phase);
+        const ty = loopRy * Math.cos(phase);
+        if (currentSign !== 0) {
+          ctx.beginPath();
+          ctx.arc(ex, ey, 5, 0, Math.PI * 2);
+          ctx.fill();
+          // Tangent arrow
+          const tlen = Math.hypot(tx, ty);
+          const ux = tx / tlen, uy = ty / tlen;
+          ctx.beginPath();
+          ctx.moveTo(ex - ux * 12, ey - uy * 12);
+          ctx.lineTo(ex + ux * 12, ey + uy * 12);
+          ctx.stroke();
+          drawArrowHead(ctx, ex + ux * 12, ey + uy * 12, ux, uy, 9);
+        }
+      }
+
+      // ===== 4. Induced B inside the loop (red arrow) =====
+      if (inducedB !== 0) {
+        ctx.strokeStyle = '#f85149';
+        ctx.fillStyle = '#f85149';
+        ctx.lineWidth = 3;
+        const arrowLen = 60;
+        const ax0 = loopCx - inducedB * arrowLen / 2;
+        const ax1 = loopCx + inducedB * arrowLen / 2;
+        ctx.beginPath();
+        ctx.moveTo(ax0, loopCy);
+        ctx.lineTo(ax1, loopCy);
+        ctx.stroke();
+        drawArrowHead(ctx, ax1, loopCy, inducedB, 0, 12);
+        ctx.font = '13px DM Sans, sans-serif';
+        ctx.fillText('B_induced', ax1 + (inducedB > 0 ? 6 : -84), loopCy - 8);
+      }
+
+      // ===== 5. The bar magnet =====
+      drawBarMagnet(ctx, magCenterX, magCy, magW, magH, magState.polarity);
+
+      // ===== 6. Distance label & guideline =====
+      ctx.strokeStyle = '#30363d';
+      ctx.setLineDash([4, 4]);
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(loopCx + loopRxFront, loopCy);
+      ctx.lineTo(magCenterX - magW / 2, loopCy);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#8b9cb3';
+      ctx.font = '11px JetBrains Mono, monospace';
+      const distMidX = (loopCx + loopRxFront + magCenterX - magW / 2) / 2;
+      ctx.fillText('d', distMidX - 4, loopCy - 6);
+
+      // ===== 7. Update readouts =====
+      const fluxEl = document.getElementById('mag-flux');
+      const dfluxEl = document.getElementById('mag-dflux');
+      const currEl = document.getElementById('mag-curr');
+      const poleEl = document.getElementById('mag-pole');
+      const dfluxRow = document.getElementById('mag-dflux-readout');
+      const currRow = document.getElementById('mag-curr-readout');
+
+      fluxEl.textContent = magState.flux.toFixed(3);
+      dfluxEl.textContent = magState.dflux.toFixed(3);
+      poleEl.textContent = nearPole;
+
+      dfluxRow.classList.remove('pos', 'neg', 'zero');
+      currRow.classList.remove('pos', 'neg', 'zero');
+      if (Math.abs(magState.dflux) < dfluxThreshold) {
+        currEl.textContent = 'none (no flux change)';
+        dfluxRow.classList.add('zero');
+        currRow.classList.add('zero');
+      } else {
+        // Describe direction in human terms
+        const desc = inducedB > 0
+          ? 'CCW (viewed from magnet) — induced B → right, toward magnet'
+          : 'CW (viewed from magnet) — induced B → left, away from magnet';
+        currEl.textContent = desc;
+        currRow.classList.add(inducedB > 0 ? 'pos' : 'neg');
+        dfluxRow.classList.add(magState.dflux > 0 ? 'pos' : 'neg');
+      }
+    }
+
+    function drawBarMagnet(ctx, cx, cy, w, h, polarity) {
+      // polarity = +1 -> N (red) on LEFT (facing loop), S (blue) on RIGHT
+      // polarity = -1 -> S on LEFT, N on RIGHT
+      const halfW = w / 2;
+      const leftColor = polarity > 0 ? '#f85149' : '#58a6ff';
+      const rightColor = polarity > 0 ? '#58a6ff' : '#f85149';
+      const leftLabel = polarity > 0 ? 'N' : 'S';
+      const rightLabel = polarity > 0 ? 'S' : 'N';
+
+      ctx.fillStyle = leftColor;
+      ctx.fillRect(cx - halfW, cy - h / 2, halfW, h);
+      ctx.fillStyle = rightColor;
+      ctx.fillRect(cx, cy - h / 2, halfW, h);
+
+      ctx.strokeStyle = '#0a0e14';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(cx - halfW, cy - h / 2, w, h);
+
+      ctx.fillStyle = '#0a0e14';
+      ctx.font = 'bold 16px DM Sans, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(leftLabel, cx - halfW / 2, cy);
+      ctx.fillText(rightLabel, cx + halfW / 2, cy);
+      ctx.textAlign = 'start';
+      ctx.textBaseline = 'alphabetic';
+    }
+
+    function drawDipoleFieldLines(ctx, magX, magY, magW, magH, polarity, loopX) {
+      // Approximate dipole: draw a few elliptical loops representing field lines.
+      // Field exits the N pole (left end if polarity=+1) and re-enters the S pole.
+      // We'll draw lines on both sides of the magnet for realism, but emphasize the side facing the loop.
+      const nearX = magX - magW / 2;     // left end of magnet
+      const farX = magX + magW / 2;      // right end
+      ctx.strokeStyle = '#3a6fb5';
+      ctx.lineWidth = 1.5;
+
+      // Draw a few half-ellipse field lines on the left (loop side) and right (back side).
+      const linesPerSide = 4;
+      for (let i = 1; i <= linesPerSide; i++) {
+        const ry = 15 + i * 22;
+        const rx = ry * 1.6;
+
+        // Left side: ellipse centered between magnet center and well to the left
+        // The field line connects N (nearX) to S (farX) wrapping around the magnet.
+        // We approximate each field line as an ellipse centered at magX with semi-axes (magW/2 + rx, ry).
+        const ellRx = magW / 2 + rx * 0.6;
+        const ellRy = ry;
+        ctx.beginPath();
+        ctx.ellipse(magX, magY, ellRx, ellRy, 0, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Add direction arrows on the loop-facing side of the ellipse
+        // Field on the LEFT side of magnet at angle ~ π flows downward (if polarity=+1) and upward on the bottom.
+        // We'll put two arrows: one above the magnet (left side) and one below.
+        // Direction: when polarity=+1, field goes from N (left end) outward. On the upper-left arc of the ellipse,
+        // the tangent points upward-then-leftward-then-downward. The field direction along this loop is:
+        //   exiting N (going LEFT and UP), arcing over, coming DOWN into S (right end).
+        // So on the upper-left, the tangent matches "going left and up" — i.e., tangent direction at angle θ on the
+        // ellipse parametrized as (magX + ellRx cos θ, magY + ellRy sin θ) with θ increasing from 0.
+        // For polarity=+1, the flow direction is θ DECREASING when on the upper half (going from right→up→left→down→right).
+        // i.e. for polarity=+1 we want arrows pointing in -dθ direction.
+        // For polarity=-1 we reverse.
+
+        // Place arrow at upper-left (θ ≈ 3π/4) and lower-left (θ ≈ 5π/4)
+        const arrowAngles = [3 * Math.PI / 4, 5 * Math.PI / 4, Math.PI / 4, 7 * Math.PI / 4];
+        for (const theta of arrowAngles) {
+          const ex = magX + ellRx * Math.cos(theta);
+          const ey = magY + ellRy * Math.sin(theta);
+          // Tangent in direction of increasing theta:
+          const tx = -ellRx * Math.sin(theta);
+          const ty = ellRy * Math.cos(theta);
+          // Field direction: for polarity=+1, flow is in -dθ direction (coming OUT of N=left), so flip.
+          const fx = -polarity * tx;
+          const fy = -polarity * ty;
+          const flen = Math.hypot(fx, fy);
+          const ux = fx / flen, uy = fy / flen;
+          ctx.fillStyle = '#3a6fb5';
+          drawArrowHead(ctx, ex + ux * 4, ey + uy * 4, ux, uy, 7);
+        }
+      }
+    }
+
+    // ============================================================
+    // SECTION 2: Loop in/out of B-field region
+    // ============================================================
+    let regState = {
+      pos: 0,          // 0..1000 from slider
+      lastFlux: 0,
+      flux: 0,
+      dflux: 0,
+      auto: false,
+      lastT: null,
+      direction: +1,    // for auto-slide
+    };
+
+    document.getElementById('reg-pos').addEventListener('input', (e) => {
+      regState.auto = false;
+      document.getElementById('reg-play').classList.remove('toggled');
+      document.getElementById('reg-play').textContent = '▶ auto-slide';
+      regState.pos = parseFloat(e.target.value);
+    });
+    document.getElementById('reg-play').addEventListener('click', () => {
+      regState.auto = !regState.auto;
+      const btn = document.getElementById('reg-play');
+      btn.classList.toggle('toggled', regState.auto);
+      btn.textContent = regState.auto ? '⏸ pause' : '▶ auto-slide';
+    });
+
+    function drawRegionScene() {
+      const canvas = document.getElementById('canvas-region');
+      if (!canvas) return;
+      const ctx = getCtx('canvas-region');
+      const w = canvas.width, h = canvas.height;
+      ctx.fillStyle = '#0a0e14';
+      ctx.fillRect(0, 0, w, h);
+
+      const now = performance.now() / 1000;
+      if (regState.lastT == null) regState.lastT = now;
+      const dt = Math.min(0.05, now - regState.lastT);
+      regState.lastT = now;
+
+      // Auto-slide
+      if (regState.auto) {
+        const speed = parseFloat(document.getElementById('reg-speed').value);
+        regState.pos += regState.direction * speed * dt * 4.0;
+        if (regState.pos >= 1000) { regState.pos = 1000; regState.direction = -1; }
+        if (regState.pos <= 0)    { regState.pos = 0;    regState.direction = +1; }
+        document.getElementById('reg-pos').value = regState.pos.toFixed(0);
+      }
+
+      // ===== Geometry =====
+      // B-field region: a centered rectangle
+      const regionW = 280, regionH = 220;
+      const regionX0 = (w - regionW) / 2;
+      const regionY0 = (h - regionH) / 2;
+      const regionX1 = regionX0 + regionW;
+
+      // Loop: a square that slides horizontally
+      const loopSize = 140;
+      const padding = 30;  // extra room outside the region on each end
+      // Range: loop right edge starts at regionX0 - padding (fully outside left)
+      //        loop left edge ends at regionX1 + padding (fully outside right)
+      const xMin = regionX0 - padding - loopSize;  // loopX0 when fully left-outside
+      const xMax = regionX1 + padding;             // loopX0 when fully right-outside
+      const loopX0 = xMin + (regState.pos / 1000) * (xMax - xMin);
+      const loopX1 = loopX0 + loopSize;
+      const loopY0 = regionY0 + (regionH - loopSize) / 2;
+      const loopY1 = loopY0 + loopSize;
+
+      // Compute overlap (area of loop inside region)
+      const overlapX0 = Math.max(loopX0, regionX0);
+      const overlapX1 = Math.min(loopX1, regionX1);
+      const overlapW = Math.max(0, overlapX1 - overlapX0);
+      const overlapH = loopSize; // loop is centered vertically inside region
+      const A_inside = overlapW * overlapH;
+
+      // Flux (with B = 1 unit and area normalized by full loop area)
+      const fullArea = loopSize * loopSize;
+      regState.flux = A_inside / fullArea;
+      if (dt > 0.0005) regState.dflux = (regState.flux - regState.lastFlux) / dt;
+      regState.lastFlux = regState.flux;
+
+      // ===== Draw B region =====
+      ctx.fillStyle = 'rgba(88, 166, 255, 0.10)';
+      ctx.fillRect(regionX0, regionY0, regionW, regionH);
+      ctx.strokeStyle = '#58a6ff';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 4]);
+      ctx.strokeRect(regionX0, regionY0, regionW, regionH);
+      ctx.setLineDash([]);
+
+      // × marks for B into page, except behind the loop's overlap (we'll re-draw those after the loop)
+      ctx.strokeStyle = '#58a6ff';
+      ctx.lineWidth = 1.5;
+      const markSpacing = 28;
+      for (let mx = regionX0 + 18; mx < regionX1 - 8; mx += markSpacing) {
+        for (let my = regionY0 + 18; my < regionY0 + regionH - 8; my += markSpacing) {
+          drawXMark(ctx, mx, my, 5);
+        }
+      }
+
+      // Region label
+      ctx.fillStyle = '#8b9cb3';
+      ctx.font = '12px DM Sans, sans-serif';
+      ctx.fillText('B into page (uniform)', regionX0, regionY0 - 8);
+
+      // ===== Draw highlight: overlap area =====
+      if (overlapW > 0) {
+        ctx.fillStyle = 'rgba(63, 185, 80, 0.12)';
+        ctx.fillRect(overlapX0, loopY0, overlapW, loopSize);
+      }
+
+      // ===== Determine status & induced current direction =====
+      const dfluxThreshold = 0.0008;
+      let status, statusColor, inducedSign, inducedB;
+      // inducedSign: +1 means CCW (when looking AT the page from viewer; induced B out of page)
+      //              -1 means CW (induced B into page)
+      // We oppose dΦ/dt where Φ is "into page" positive.
+      // Φ here = A_inside / fullArea (positive). dΦ/dt > 0 -> entering -> induced B should be OUT of page -> CCW.
+      if (overlapW <= 0) {
+        status = 'fully outside region — no flux';
+        statusColor = 'zero';
+        inducedSign = 0;
+        inducedB = 0;
+      } else if (overlapW >= regionW || (loopX0 >= regionX0 && loopX1 <= regionX1)) {
+        status = 'fully inside region — flux constant, no current';
+        statusColor = 'zero';
+        inducedSign = 0;
+        inducedB = 0;
+      } else if (regState.dflux > dfluxThreshold) {
+        status = 'entering — flux growing';
+        statusColor = 'pos';
+        inducedSign = +1;   // CCW
+        inducedB = +1;      // out of page
+      } else if (regState.dflux < -dfluxThreshold) {
+        status = 'exiting — flux shrinking';
+        statusColor = 'neg';
+        inducedSign = -1;   // CW
+        inducedB = -1;      // into page
+      } else {
+        status = 'partially in — but not moving (no change)';
+        statusColor = 'zero';
+        inducedSign = 0;
+        inducedB = 0;
+      }
+
+      // ===== Draw the loop =====
+      ctx.strokeStyle = '#d29922';
+      ctx.lineWidth = 4;
+      ctx.strokeRect(loopX0, loopY0, loopSize, loopSize);
+
+      // ===== Draw current arrows on the loop edges =====
+      if (inducedSign !== 0) {
+        regState.animPhase = (regState.animPhase || 0) + dt * inducedSign * 1.6;
+        drawSquareLoopCurrent(ctx, loopX0, loopY0, loopSize, inducedSign, regState.animPhase);
+      }
+
+      // ===== Induced B marker at center of loop =====
+      const lcx = loopX0 + loopSize / 2;
+      const lcy = loopY0 + loopSize / 2;
+      if (inducedB !== 0) {
+        ctx.fillStyle = '#f85149';
+        ctx.strokeStyle = '#f85149';
+        ctx.lineWidth = 2;
+        if (inducedB > 0) {
+          // out of page: dot
+          ctx.beginPath();
+          ctx.arc(lcx, lcy, 7, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(lcx, lcy, 12, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.font = '10px JetBrains Mono, monospace';
+          ctx.fillText('B_ind out', lcx + 16, lcy + 4);
+        } else {
+          // into page: ×
+          drawXMark(ctx, lcx, lcy, 9);
+          ctx.beginPath();
+          ctx.arc(lcx, lcy, 14, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.font = '10px JetBrains Mono, monospace';
+          ctx.fillText('B_ind in', lcx + 18, lcy + 4);
+        }
+      }
+
+      // ===== Update readouts =====
+      const statusEl = document.getElementById('reg-status');
+      const areaEl = document.getElementById('reg-area');
+      const fluxEl = document.getElementById('reg-flux');
+      const dfluxEl = document.getElementById('reg-dflux');
+      const currEl = document.getElementById('reg-curr');
+      const dfluxRow = document.getElementById('reg-dflux-readout');
+      const currRow = document.getElementById('reg-curr-readout');
+
+      statusEl.textContent = status;
+      areaEl.textContent = (A_inside / fullArea).toFixed(2) + ' (loop fraction)';
+      fluxEl.textContent = regState.flux.toFixed(3);
+      dfluxEl.textContent = regState.dflux.toFixed(3);
+
+      dfluxRow.classList.remove('pos', 'neg', 'zero');
+      currRow.classList.remove('pos', 'neg', 'zero');
+      if (inducedSign === 0) {
+        currEl.textContent = 'none';
+        dfluxRow.classList.add('zero');
+        currRow.classList.add('zero');
+      } else {
+        const ccwOrCw = inducedSign > 0 ? 'CCW (induced B out of page)' : 'CW (induced B into page)';
+        currEl.textContent = ccwOrCw;
+        dfluxRow.classList.add(regState.dflux > 0 ? 'pos' : 'neg');
+        currRow.classList.add(inducedSign > 0 ? 'pos' : 'neg');
+      }
+    }
+
+    function drawXMark(ctx, x, y, r) {
+      ctx.beginPath();
+      ctx.moveTo(x - r, y - r);
+      ctx.lineTo(x + r, y + r);
+      ctx.moveTo(x + r, y - r);
+      ctx.lineTo(x - r, y + r);
+      ctx.stroke();
+    }
+
+    function drawSquareLoopCurrent(ctx, x0, y0, size, sign, phase) {
+      // Place 4 chasing arrows that travel around the perimeter.
+      // Perimeter parameter t in [0, 4): 0..1 = top edge L→R, 1..2 = right edge T→B, 2..3 = bottom edge R→L, 3..4 = left edge B→T.
+      // For sign=+1 (CCW as seen by viewer), reverse direction: T→B becomes B→T etc.
+      // Easier: define base direction CW (top L→R, right T→B, ...). For CCW, use t' = 4 - t.
+      const numArrows = 4;
+      ctx.strokeStyle = '#3fb950';
+      ctx.fillStyle = '#3fb950';
+      ctx.lineWidth = 3;
+      for (let i = 0; i < numArrows; i++) {
+        let t = (i / numArrows + (phase / (Math.PI * 2))) % 1;
+        t *= 4;
+        if (sign > 0) t = (4 - t) % 4;  // CCW
+        let px, py, dx, dy;
+        if (t < 1) {
+          // top edge L→R
+          px = x0 + t * size; py = y0; dx = 1; dy = 0;
+        } else if (t < 2) {
+          // right edge T→B
+          px = x0 + size; py = y0 + (t - 1) * size; dx = 0; dy = 1;
+        } else if (t < 3) {
+          // bottom edge R→L
+          px = x0 + (3 - t) * size; py = y0 + size; dx = -1; dy = 0;
+        } else {
+          // left edge B→T
+          px = x0; py = y0 + (4 - t) * size; dx = 0; dy = -1;
+        }
+        ctx.beginPath();
+        ctx.arc(px, py, 4, 0, Math.PI * 2);
+        ctx.fill();
+        drawArrowHead(ctx, px + dx * 8, py + dy * 8, dx, dy, 9);
+      }
+    }
+
+    // ============================================================
+    // Animation loop
+    // ============================================================
+    function loop() {
+      const active = document.querySelector('section.active');
+      if (active) {
+        if (active.id === 'magnet') drawMagnetScene();
+        else if (active.id === 'region') drawRegionScene();
+      }
+      requestAnimationFrame(loop);
+    }
+    drawMagnetScene();
+    loop();
+  </script>
+</body>
+</html>
