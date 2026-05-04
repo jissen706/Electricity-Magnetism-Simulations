@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EM Waves — PHYS 151</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f1419;
+      --surface: #1a2332;
+      --surface2: #243044;
+      --text: #e6edf3;
+      --text-muted: #8b9cb3;
+      --accent: #58a6ff;
+      --accent-pos: #3fb950;
+      --accent-neg: #f85149;
+      --accent-purple: #a371f7;
+      --accent-amber: #d29922;
+      --border: #30363d;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+    .container { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem; }
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: var(--text);
+    }
+    .subtitle { color: var(--text-muted); font-size: 1rem; margin-bottom: 2rem; }
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    nav button {
+      font-family: inherit;
+      font-size: 0.9rem;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    nav button:hover { background: var(--surface2); border-color: var(--accent); }
+    nav button.active { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+    section { display: none; animation: fade 0.3s ease; }
+    section.active { display: block; }
+    @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .card h2 { font-size: 1.25rem; margin-bottom: 0.75rem; color: var(--accent); }
+    .card p { color: var(--text-muted); margin-bottom: 0.75rem; font-size: 0.95rem; }
+    .viz-box {
+      background: #0a0e14;
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin: 1rem 0;
+      min-height: 320px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .viz-box canvas { display: block; max-width: 100%; }
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+    }
+    .controls label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      min-width: 110px;
+    }
+    input[type="range"] {
+      width: 160px;
+      height: 6px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: var(--surface2);
+      border-radius: 3px;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+    }
+    .btn {
+      font-family: inherit;
+      font-size: 0.85rem;
+      padding: 0.4rem 0.9rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .btn:hover { background: var(--surface); border-color: var(--accent); }
+    .btn.toggled { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+    .formula {
+      font-family: 'JetBrains Mono', monospace;
+      background: var(--surface2);
+      padding: 0.5rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      margin: 0.5rem 0;
+      display: inline-block;
+    }
+    .readout-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+    .readout {
+      font-family: 'JetBrains Mono', monospace;
+      background: var(--surface2);
+      padding: 0.5rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      color: var(--text);
+    }
+    .readout .lbl { color: var(--text-muted); margin-right: 0.4rem; }
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-top: 0.75rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    .legend span { display: flex; align-items: center; gap: 0.35rem; }
+    .legend .swatch { width: 16px; height: 4px; border-radius: 2px; }
+    .legend .swatch.e { background: var(--accent); }
+    .legend .swatch.b { background: var(--accent-amber); }
+    .legend .swatch.s { background: var(--accent-pos); }
+    .legend .swatch.k { background: var(--accent-purple); }
+    .key-idea {
+      background: var(--surface2);
+      border-left: 3px solid var(--accent-amber);
+      padding: 0.6rem 0.9rem;
+      border-radius: 4px;
+      color: var(--text);
+      font-size: 0.92rem;
+      margin: 0.75rem 0;
+    }
+    .toggle-group {
+      display: inline-flex;
+      gap: 0;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .toggle-group button {
+      font-family: inherit;
+      font-size: 0.85rem;
+      padding: 0.4rem 0.9rem;
+      border: none;
+      background: var(--surface2);
+      color: var(--text);
+      cursor: pointer;
+    }
+    .toggle-group button.active {
+      background: var(--accent);
+      color: var(--bg);
+    }
+    footer { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border); font-size: 0.85rem; color: var(--text-muted); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Electromagnetic Waves</h1>
+    <p class="subtitle">A self-propagating ripple of perpendicular electric and magnetic fields, traveling at <em>c</em>.</p>
+
+    <nav>
+      <button data-section="wave" class="active">1. Wave Structure</button>
+      <button data-section="snapshot">2. E &amp; B at a Point / Snapshot</button>
+      <button data-section="energy">3. Intensity, Poynting &amp; Pressure</button>
+    </nav>
+
+    <!-- Section 1: 3D-ish traveling wave -->
+    <section id="wave" class="active">
+      <div class="card">
+        <h2>Perpendicular E and B, traveling at c</h2>
+        <p>An EM wave is a self-sustaining oscillation: a time-varying <strong>E</strong> creates a <strong>B</strong>, and a time-varying <strong>B</strong> creates an <strong>E</strong>. They oscillate <em>in phase</em>, point <em>perpendicular</em> to each other, and the whole pattern travels in the direction <strong>E × B</strong> at speed <em>c</em>.</p>
+        <p class="formula">E(x, t) = E₀ cos(kx − ωt) &nbsp;·ŷ &nbsp;&nbsp;&nbsp; B(x, t) = (E₀/c) cos(kx − ωt) &nbsp;·ẑ</p>
+        <p class="formula">c = f λ &nbsp;&nbsp;&nbsp; ω = 2π f &nbsp;&nbsp;&nbsp; k = 2π / λ &nbsp;&nbsp;&nbsp; |E| / |B| = c</p>
+        <div class="key-idea">
+          Pick any frequency you like — wavelength is forced by λ = c / f. And no matter the amplitude, the magnetic field is always exactly E / c smaller than the electric field (in SI units).
+        </div>
+        <div class="viz-box">
+          <canvas id="canvas-wave" width="800" height="380"></canvas>
+        </div>
+        <div class="controls">
+          <label>E₀ (V/m):</label>
+          <input type="range" id="wv-e0" min="100" max="2000" value="1000" step="10">
+          <label>frequency f:</label>
+          <input type="range" id="wv-f" min="1" max="100" value="20" step="1">
+          <button class="btn toggled" id="wv-play">⏸ pause</button>
+        </div>
+        <div class="readout-row">
+          <span class="readout"><span class="lbl">E₀ =</span><span id="wv-e0-out">1000</span> V/m</span>
+          <span class="readout"><span class="lbl">B₀ = E₀/c =</span><span id="wv-b0-out">3.34</span> μT</span>
+          <span class="readout"><span class="lbl">f =</span><span id="wv-f-out">20 MHz</span></span>
+          <span class="readout"><span class="lbl">λ = c/f =</span><span id="wv-lam-out">—</span></span>
+          <span class="readout"><span class="lbl">ω =</span><span id="wv-w-out">—</span></span>
+          <span class="readout"><span class="lbl">k =</span><span id="wv-k-out">—</span></span>
+        </div>
+        <div class="legend">
+          <span><span class="swatch e"></span> E (in y-direction)</span>
+          <span><span class="swatch b"></span> B (in z-direction)</span>
+          <span><span class="swatch k"></span> propagation direction (+x, at speed c)</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2: E & B at a point / snapshot -->
+    <section id="snapshot">
+      <div class="card">
+        <h2>The same value of E repeats every period T (in time) and every wavelength λ (in space)</h2>
+        <p>Left plot: <strong>E</strong> at a single point in space, watched over time — the spacing between any two equal values follows the period T = 1/f. Right plot: <strong>E</strong> across space at a single instant — the spacing follows the wavelength λ = c/f.</p>
+        <p class="formula">E(x₀, t) = E₀ cos(ωt − kx₀) &nbsp;&nbsp;&nbsp; E(x, t₀) = E₀ cos(kx − ωt₀)</p>
+        <div class="key-idea">
+          Move the "target value" slider to pick an E-value. The plots mark every spot where the wave passes through that value and label the time / distance between consecutive crossings. Same value, same direction (e.g., on the way up) → spacing is exactly T (or λ). Same value, opposite direction → spacing is less than T (or λ).
+        </div>
+        <div class="viz-box">
+          <canvas id="canvas-snap" width="800" height="380"></canvas>
+        </div>
+        <div class="controls">
+          <label>E₀ (V/m):</label>
+          <input type="range" id="sn-e0" min="100" max="2000" value="1000" step="10">
+          <label>frequency f:</label>
+          <input type="range" id="sn-f" min="5" max="50" value="20" step="1">
+          <label>target value E₁:</label>
+          <input type="range" id="sn-target" min="-95" max="95" value="50" step="1">
+        </div>
+        <div class="readout-row">
+          <span class="readout"><span class="lbl">E₀ =</span><span id="sn-e0-out">1000</span> V/m</span>
+          <span class="readout"><span class="lbl">f =</span><span id="sn-f-out">20</span> Hz (display)</span>
+          <span class="readout"><span class="lbl">T = 1/f =</span><span id="sn-T-out">0.050</span> s</span>
+          <span class="readout"><span class="lbl">λ = c/f =</span><span id="sn-lam-out">—</span></span>
+          <span class="readout"><span class="lbl">target E₁ =</span><span id="sn-tgt-out">500</span> V/m</span>
+          <span class="readout"><span class="lbl">Δt (same-direction) =</span><span id="sn-dt-out">T</span></span>
+          <span class="readout"><span class="lbl">Δx (same-direction) =</span><span id="sn-dx-out">λ</span></span>
+        </div>
+        <div class="legend">
+          <span><span class="swatch e"></span> E waveform</span>
+          <span><span class="swatch s"></span> target E₁ level</span>
+          <span><span class="swatch k"></span> matched crossings</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 3: Intensity, Poynting, pressure -->
+    <section id="energy">
+      <div class="card">
+        <h2>How much energy and momentum the wave carries</h2>
+        <p>The Poynting vector <strong>S</strong> = (1/μ₀) <strong>E</strong> × <strong>B</strong> points along the propagation direction and gives the instantaneous power per unit area carried by the wave. Time-averaging the sinusoid gives the intensity I = E₀²/(2μ₀c) = ½ c ε₀ E₀². When that energy hits a surface, it also delivers momentum, so it produces a pressure: I/c if the surface absorbs everything, 2I/c if it reflects everything.</p>
+        <p class="formula">S(x,t) = (1/μ₀) E·B = c ε₀ E₀² cos²(kx − ωt) &nbsp;&nbsp; → &nbsp;&nbsp; I = ⟨S⟩ = E₀² / (2 μ₀ c)</p>
+        <p class="formula">P_abs = I / c &nbsp;&nbsp; P_refl = 2 I / c &nbsp;&nbsp; F = P · A &nbsp;&nbsp; Δp = F · Δt</p>
+        <div class="key-idea">
+          Reflection delivers <strong>twice</strong> the momentum kick that absorption does — the photon doesn't just dump its momentum, it reverses, so the surface absorbs both arrivals and departures. (Same reason a ball bouncing elastically off a wall hits twice as hard as one that sticks.)
+        </div>
+        <div class="viz-box">
+          <canvas id="canvas-energy" width="800" height="320"></canvas>
+        </div>
+        <div class="controls">
+          <label>E₀ (V/m):</label>
+          <input type="range" id="en-e0" min="100" max="3000" value="1000" step="10">
+          <label>area A (m²):</label>
+          <input type="range" id="en-area" min="1" max="100" value="10" step="1">
+          <label>duration Δt (s):</label>
+          <input type="range" id="en-dt" min="1" max="60" value="10" step="1">
+          <span class="toggle-group" id="en-mode">
+            <button data-mode="absorb" class="active">absorb</button>
+            <button data-mode="reflect">reflect</button>
+          </span>
+        </div>
+        <div class="readout-row">
+          <span class="readout"><span class="lbl">E₀ =</span><span id="en-e0-out">1000</span> V/m</span>
+          <span class="readout"><span class="lbl">B₀ =</span><span id="en-b0-out">3.34</span> μT</span>
+          <span class="readout"><span class="lbl">I = ⟨S⟩ =</span><span id="en-I-out">—</span> W/m²</span>
+          <span class="readout"><span class="lbl">Power = I·A =</span><span id="en-P-out">—</span> W</span>
+        </div>
+        <div class="readout-row">
+          <span class="readout"><span class="lbl">Energy in Δt =</span><span id="en-U-out">—</span> J</span>
+          <span class="readout"><span class="lbl">Pressure =</span><span id="en-press-out">—</span> Pa</span>
+          <span class="readout"><span class="lbl">Force on surface =</span><span id="en-F-out">—</span> N</span>
+          <span class="readout"><span class="lbl">Momentum delivered =</span><span id="en-mom-out">—</span> kg·m/s</span>
+        </div>
+        <div class="legend">
+          <span><span class="swatch e"></span> incoming E</span>
+          <span><span class="swatch b"></span> incoming B</span>
+          <span><span class="swatch s"></span> Poynting vector S</span>
+          <span><span class="swatch k"></span> momentum kick on surface</span>
+        </div>
+      </div>
+    </section>
+
+    <footer>PHYS 151 — Electricity &amp; Magnetism. EM Waves module.</footer>
+  </div>
+
+  <script>
+    // Physical constants
+    const C = 2.998e8;          // speed of light, m/s
+    const MU0 = 4 * Math.PI * 1e-7;  // permeability of free space, T·m/A
+    const EPS0 = 1 / (MU0 * C * C);  // permittivity of free space
+
+    // --- Navigation ---
+    document.querySelectorAll('nav button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.section).classList.add('active');
+      });
+    });
+
+    function getCtx(id) {
+      const c = document.getElementById(id);
+      return c ? c.getContext('2d') : null;
+    }
+    function drawArrowHead(ctx, x, y, dirX, dirY, size) {
+      const len = Math.hypot(dirX, dirY) || 1;
+      const ux = dirX / len, uy = dirY / len;
+      const px = -uy, py = ux;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x - ux * size + px * size * 0.5, y - uy * size + py * size * 0.5);
+      ctx.lineTo(x - ux * size - px * size * 0.5, y - uy * size - py * size * 0.5);
+      ctx.closePath();
+      ctx.fill();
+    }
+    function fmtSci(x, sig=3) {
+      if (!isFinite(x)) return '—';
+      if (x === 0) return '0';
+      const abs = Math.abs(x);
+      if (abs >= 1e-2 && abs < 1e4) return x.toFixed(sig);
+      return x.toExponential(sig - 1);
+    }
+
+    // ============================================================
+    // SECTION 1: Traveling EM wave (3D-ish)
+    // ============================================================
+    let waveState = { t: 0, lastT: null, playing: true };
+    document.getElementById('wv-play').addEventListener('click', () => {
+      waveState.playing = !waveState.playing;
+      const btn = document.getElementById('wv-play');
+      btn.classList.toggle('toggled', waveState.playing);
+      btn.textContent = waveState.playing ? '⏸ pause' : '▶ play';
+    });
+
+    function drawWaveScene() {
+      const canvas = document.getElementById('canvas-wave');
+      if (!canvas) return;
+      const ctx = getCtx('canvas-wave');
+      const w = canvas.width, h = canvas.height;
+      ctx.fillStyle = '#0a0e14';
+      ctx.fillRect(0, 0, w, h);
+
+      const now = performance.now() / 1000;
+      if (waveState.lastT == null) waveState.lastT = now;
+      const dt = Math.min(0.05, now - waveState.lastT);
+      waveState.lastT = now;
+      if (waveState.playing) waveState.t += dt;
+
+      const e0Slider = parseFloat(document.getElementById('wv-e0').value);
+      const fSlider = parseFloat(document.getElementById('wv-f').value);
+
+      // Display readouts use real SI: f mapped to a chosen scale (1e6 Hz)
+      // For visualization the slider f sets cycles-per-canvas; for readouts we map to a sensible MHz range.
+      const fHz = fSlider * 1e6;        // map slider 1..100 to 1..100 MHz
+      const lambdaM = C / fHz;          // wavelength in meters
+      const omega = 2 * Math.PI * fHz;
+      const kRad = 2 * Math.PI / lambdaM;
+      const B0 = e0Slider / C;          // Tesla
+
+      document.getElementById('wv-e0-out').textContent = e0Slider.toFixed(0);
+      document.getElementById('wv-b0-out').textContent = (B0 * 1e6).toFixed(2);
+      document.getElementById('wv-f-out').textContent = fSlider.toFixed(0) + ' MHz';
+      document.getElementById('wv-lam-out').textContent = fmtSci(lambdaM, 3) + ' m';
+      document.getElementById('wv-w-out').textContent = fmtSci(omega, 3) + ' rad/s';
+      document.getElementById('wv-k-out').textContent = fmtSci(kRad, 3) + ' rad/m';
+
+      // ===== Visual layout (axonometric) =====
+      // x-axis horizontal (right), y-axis vertical (up), z-axis projected up-right.
+      const originX = 70, originY = h / 2 + 30;
+      const xLen = w - 140;            // horizontal length
+      const eScale = 70;               // pixels per unit amplitude (visual)
+      const bScale = 70;               // separately scaled for visual parity
+      const zAng = -0.45;              // z-axis projection angle (radians)
+      const zOffsetX = Math.cos(zAng) * 0.55;  // pixel offset per "z unit"
+      const zOffsetY = Math.sin(zAng) * 0.55;
+
+      // For a clean look, choose visual k: 2π * (visual cycles across canvas)
+      const visualCycles = fSlider / 8;   // tune so slider sweeps through several cycles
+      const kVis = 2 * Math.PI * visualCycles / xLen;
+      const omegaVis = 2 * Math.PI * (fSlider / 8) * 0.6;  // visual angular speed (units of cycles/sec)
+      const E0vis = (e0Slider / 2000);    // 0..1
+      const B0vis = E0vis;                // visually parity (real B is much smaller, but for clarity)
+
+      // Draw axes
+      ctx.strokeStyle = '#243044';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(originX, originY);
+      ctx.lineTo(originX + xLen, originY);
+      ctx.stroke();
+      // y axis (up)
+      ctx.beginPath();
+      ctx.moveTo(originX, originY);
+      ctx.lineTo(originX, originY - 110);
+      ctx.stroke();
+      // z axis (into page, drawn up-right)
+      ctx.beginPath();
+      ctx.moveTo(originX, originY);
+      ctx.lineTo(originX + 70 * zOffsetX * 1.5, originY + 70 * zOffsetY * 1.5);
+      ctx.stroke();
+      // labels
+      ctx.fillStyle = '#8b9cb3';
+      ctx.font = '12px JetBrains Mono, monospace';
+      ctx.fillText('x  (propagation, +c)', originX + xLen + 6, originY + 4);
+      ctx.fillText('y (E)', originX - 18, originY - 116);
+      ctx.fillText('z (B)', originX + 70 * zOffsetX * 1.5 + 6, originY + 70 * zOffsetY * 1.5 + 4);
+      // arrowheads on axes
+      ctx.fillStyle = '#243044';
+      drawArrowHead(ctx, originX + xLen, originY, 1, 0, 8);
+      drawArrowHead(ctx, originX, originY - 110, 0, -1, 8);
+      drawArrowHead(ctx, originX + 70 * zOffsetX * 1.5, originY + 70 * zOffsetY * 1.5, zOffsetX, zOffsetY, 8);
+
+      // ===== Draw the E and B waves =====
+      const N = 140;
+      const samples = [];
+      for (let i = 0; i <= N; i++) {
+        const xPix = originX + (i / N) * xLen;
+        const xUnit = i / N * xLen;
+        const phase = kVis * xUnit - omegaVis * waveState.t;
+        const e = E0vis * Math.cos(phase);
+        const b = B0vis * Math.cos(phase);
+        samples.push({ xPix, e, b });
+      }
+
+      // Vertical tick rods for E (every few samples)
+      ctx.lineWidth = 1.2;
+      for (let i = 0; i < samples.length; i += 4) {
+        const s = samples[i];
+        ctx.strokeStyle = 'rgba(88, 166, 255, 0.45)';
+        ctx.beginPath();
+        ctx.moveTo(s.xPix, originY);
+        ctx.lineTo(s.xPix, originY - s.e * eScale);
+        ctx.stroke();
+      }
+      // E sinusoid (top curve through tip points)
+      ctx.strokeStyle = '#58a6ff';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      for (let i = 0; i < samples.length; i++) {
+        const s = samples[i];
+        const x = s.xPix, y = originY - s.e * eScale;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+
+      // Diagonal "rods" for B (drawn projected along z direction)
+      for (let i = 0; i < samples.length; i += 4) {
+        const s = samples[i];
+        const dx = s.b * bScale * zOffsetX;
+        const dy = s.b * bScale * zOffsetY;
+        ctx.strokeStyle = 'rgba(210, 153, 34, 0.45)';
+        ctx.beginPath();
+        ctx.moveTo(s.xPix, originY);
+        ctx.lineTo(s.xPix + dx, originY + dy);
+        ctx.stroke();
+      }
+      // B sinusoid (curve along the projected tips)
+      ctx.strokeStyle = '#d29922';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      for (let i = 0; i < samples.length; i++) {
+        const s = samples[i];
+        const x = s.xPix + s.b * bScale * zOffsetX;
+        const y = originY + s.b * bScale * zOffsetY;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+
+      // Highlight one wavelength in the middle of the canvas
+      const lambdaPix = 2 * Math.PI / kVis;
+      const labelStartX = originX + xLen * 0.25;
+      ctx.strokeStyle = '#a371f7';
+      ctx.fillStyle = '#a371f7';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(labelStartX, originY + 60);
+      ctx.lineTo(labelStartX + lambdaPix, originY + 60);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.moveTo(labelStartX, originY + 55);
+      ctx.lineTo(labelStartX, originY + 65);
+      ctx.moveTo(labelStartX + lambdaPix, originY + 55);
+      ctx.lineTo(labelStartX + lambdaPix, originY + 65);
+      ctx.stroke();
+      ctx.font = '12px JetBrains Mono, monospace';
+      ctx.fillText('λ', labelStartX + lambdaPix / 2 - 4, originY + 78);
+    }
+
+    [
+      'wv-e0', 'wv-f'
+    ].forEach(id => {
+      document.getElementById(id).addEventListener('input', () => { /* values read each frame */ });
+    });
+
+    // ============================================================
+    // SECTION 2: E at fixed point vs E at fixed time
+    // ============================================================
+    function drawSnapshot() {
+      const canvas = document.getElementById('canvas-snap');
+      if (!canvas) return;
+      const ctx = getCtx('canvas-snap');
+      const w = canvas.width, h = canvas.height;
+      ctx.fillStyle = '#0a0e14';
+      ctx.fillRect(0, 0, w, h);
+
+      const e0 = parseFloat(document.getElementById('sn-e0').value);  // V/m
+      const fSlider = parseFloat(document.getElementById('sn-f').value);  // Hz (display)
+      const targetFrac = parseFloat(document.getElementById('sn-target').value) / 100;  // -0.95..0.95
+      const E1 = targetFrac * e0;  // V/m
+
+      const fHz = fSlider;   // display Hz (kept "natural" so T = 1/f is human-readable)
+      const T = 1 / fHz;
+      const omega = 2 * Math.PI * fHz;
+      const lambdaM = C / fHz;
+      const kRad = 2 * Math.PI / lambdaM;
+
+      document.getElementById('sn-e0-out').textContent = e0.toFixed(0);
+      document.getElementById('sn-f-out').textContent = fHz.toFixed(0);
+      document.getElementById('sn-T-out').textContent = T.toFixed(3);
+      document.getElementById('sn-lam-out').textContent = fmtSci(lambdaM, 3) + ' m';
+      document.getElementById('sn-tgt-out').textContent = E1.toFixed(0);
+
+      // Layout: left half = E(t), right half = E(x)
+      const halfW = w / 2;
+      drawTraceAxes(ctx, 50, 30, halfW - 70, h - 60, 'time t (units of T)', 'E(t)  [V/m]', e0);
+      drawTraceAxes(ctx, halfW + 20, 30, halfW - 70, h - 60, 'space x (units of λ)', 'E(x)  [V/m]', e0);
+
+      // ----- Left plot: E(t) at x = 0 -----
+      const tPlotX0 = 50, tPlotY0 = 30, tPlotW = halfW - 70, tPlotH = h - 60;
+      const tMidY = tPlotY0 + tPlotH / 2;
+      const yScale = (tPlotH / 2) * 0.85 / e0;
+      const tAxisSpan = 3 * T;   // show 3 periods
+      const tToPx = tPlotW / tAxisSpan;
+
+      // Target line
+      drawTargetLine(ctx, tPlotX0, tPlotW, tMidY - E1 * yScale);
+
+      // Curve E(t) = E0 cos(ωt)
+      ctx.strokeStyle = '#58a6ff';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      for (let i = 0; i <= 240; i++) {
+        const tF = (i / 240) * tAxisSpan;
+        const E = e0 * Math.cos(omega * tF);
+        const px = tPlotX0 + tF * tToPx;
+        const py = tMidY - E * yScale;
+        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+
+      // Mark all crossings of E = E1 within [0, 3T] and label spacing
+      const tCrossings = findCrossings((tF) => e0 * Math.cos(omega * tF), 0, tAxisSpan, E1);
+      drawCrossingMarkers(ctx, tCrossings, (tF) => tPlotX0 + tF * tToPx, tMidY - E1 * yScale);
+      drawSpacingAnnotation(ctx, tCrossings, (tF) => tPlotX0 + tF * tToPx, tMidY - E1 * yScale - 18, 'T', T);
+
+      // x-axis ticks at integer T
+      ctx.fillStyle = '#8b9cb3';
+      ctx.font = '11px JetBrains Mono, monospace';
+      for (let n = 0; n <= 3; n++) {
+        const px = tPlotX0 + n * T * tToPx;
+        ctx.fillText(n + 'T', px - 6, tMidY + tPlotH / 2 + 14);
+      }
+
+      // ----- Right plot: E(x) at t = 0 -----
+      const xPlotX0 = halfW + 20, xPlotY0 = 30, xPlotW = halfW - 70, xPlotH = h - 60;
+      const xMidY = xPlotY0 + xPlotH / 2;
+      const xAxisSpan = 3 * lambdaM;
+      const xToPx = xPlotW / xAxisSpan;
+
+      drawTargetLine(ctx, xPlotX0, xPlotW, xMidY - E1 * yScale);
+
+      // Curve E(x) = E0 cos(kx)
+      ctx.strokeStyle = '#58a6ff';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      for (let i = 0; i <= 240; i++) {
+        const xF = (i / 240) * xAxisSpan;
+        const E = e0 * Math.cos(kRad * xF);
+        const px = xPlotX0 + xF * xToPx;
+        const py = xMidY - E * yScale;
+        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+
+      const xCrossings = findCrossings((xF) => e0 * Math.cos(kRad * xF), 0, xAxisSpan, E1);
+      drawCrossingMarkers(ctx, xCrossings, (xF) => xPlotX0 + xF * xToPx, xMidY - E1 * yScale);
+      drawSpacingAnnotation(ctx, xCrossings, (xF) => xPlotX0 + xF * xToPx, xMidY - E1 * yScale - 18, 'λ', lambdaM);
+
+      // x ticks at integer λ
+      ctx.fillStyle = '#8b9cb3';
+      ctx.font = '11px JetBrains Mono, monospace';
+      for (let n = 0; n <= 3; n++) {
+        const px = xPlotX0 + n * lambdaM * xToPx;
+        ctx.fillText(n + 'λ', px - 6, xMidY + xPlotH / 2 + 14);
+      }
+
+      // Update Δt / Δx readouts (same-direction = T, opposite-direction depends on E1)
+      const acos = Math.acos(Math.max(-1, Math.min(1, E1 / e0)));
+      const dtSame = T;
+      const dxSame = lambdaM;
+      const dtOpp = (T - 2 * acos / omega);  // time between "going up at E1" and "going down at E1" in same period
+      const dxOpp = (lambdaM - 2 * acos / kRad);
+      document.getElementById('sn-dt-out').textContent = dtSame.toFixed(3) + ' s (= T) | opposite-dir: ' + Math.abs(dtOpp).toFixed(3) + ' s';
+      document.getElementById('sn-dx-out').textContent = fmtSci(dxSame, 3) + ' m (= λ) | opposite-dir: ' + fmtSci(Math.abs(dxOpp), 3) + ' m';
+    }
+
+    function drawTraceAxes(ctx, x0, y0, w, h, xLabel, yLabel, e0) {
+      ctx.strokeStyle = '#30363d';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x0, y0, w, h);
+      const midY = y0 + h / 2;
+      ctx.strokeStyle = '#243044';
+      ctx.beginPath();
+      ctx.moveTo(x0, midY);
+      ctx.lineTo(x0 + w, midY);
+      ctx.stroke();
+      ctx.fillStyle = '#8b9cb3';
+      ctx.font = '11px JetBrains Mono, monospace';
+      ctx.fillText('+E₀', x0 + 4, y0 + 12);
+      ctx.fillText('−E₀', x0 + 4, y0 + h - 4);
+      ctx.fillText('0', x0 + 4, midY - 3);
+      ctx.fillText(xLabel, x0 + w / 2 - 40, y0 + h + 32);
+      ctx.fillText(yLabel, x0 + 30, y0 - 6);
+    }
+
+    function drawTargetLine(ctx, x0, w, y) {
+      ctx.strokeStyle = '#3fb950';
+      ctx.setLineDash([4, 3]);
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(x0, y);
+      ctx.lineTo(x0 + w, y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#3fb950';
+      ctx.font = '11px JetBrains Mono, monospace';
+      ctx.fillText('E₁', x0 + 4, y - 4);
+    }
+
+    function findCrossings(f, a, b, value) {
+      // Sample finely and bracket sign changes of (f(x) - value)
+      const N = 600;
+      const out = [];
+      let prev = f(a) - value;
+      for (let i = 1; i <= N; i++) {
+        const x = a + (b - a) * i / N;
+        const cur = f(x) - value;
+        if (prev === 0) { out.push(a + (b - a) * (i - 1) / N); }
+        else if (prev * cur < 0) {
+          // bisect briefly
+          let lo = a + (b - a) * (i - 1) / N, hi = x;
+          for (let j = 0; j < 20; j++) {
+            const m = (lo + hi) / 2;
+            const fm = f(m) - value;
+            if (prev * fm <= 0) hi = m; else { lo = m; prev = fm; }
+          }
+          out.push((lo + hi) / 2);
+          prev = cur;
+        } else {
+          prev = cur;
+        }
+      }
+      return out;
+    }
+
+    function drawCrossingMarkers(ctx, crossings, xToPx, y) {
+      ctx.fillStyle = '#a371f7';
+      for (const t of crossings) {
+        ctx.beginPath();
+        ctx.arc(xToPx(t), y, 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function drawSpacingAnnotation(ctx, crossings, xToPx, y, label, period) {
+      // Draw a bracket between every other crossing (these are the "same-direction" ones)
+      if (crossings.length < 3) return;
+      ctx.strokeStyle = '#a371f7';
+      ctx.fillStyle = '#a371f7';
+      ctx.lineWidth = 1.4;
+      ctx.font = '11px JetBrains Mono, monospace';
+      for (let i = 0; i + 2 < crossings.length; i += 2) {
+        const x0 = xToPx(crossings[i]);
+        const x1 = xToPx(crossings[i + 2]);
+        ctx.beginPath();
+        ctx.moveTo(x0, y);
+        ctx.lineTo(x0, y - 6);
+        ctx.lineTo(x1, y - 6);
+        ctx.lineTo(x1, y);
+        ctx.stroke();
+        ctx.fillText('Δ = ' + label, (x0 + x1) / 2 - 14, y - 9);
+        if (i >= 2) break; // only label one or two brackets to keep it readable
+      }
+    }
+
+    // ============================================================
+    // SECTION 3: Intensity, Poynting, radiation pressure
+    // ============================================================
+    let energyState = { mode: 'absorb', t: 0, lastT: null };
+    document.querySelectorAll('#en-mode button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#en-mode button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        energyState.mode = btn.dataset.mode;
+      });
+    });
+
+    function drawEnergyScene() {
+      const canvas = document.getElementById('canvas-energy');
+      if (!canvas) return;
+      const ctx = getCtx('canvas-energy');
+      const w = canvas.width, h = canvas.height;
+      ctx.fillStyle = '#0a0e14';
+      ctx.fillRect(0, 0, w, h);
+
+      const now = performance.now() / 1000;
+      if (energyState.lastT == null) energyState.lastT = now;
+      const dt = Math.min(0.05, now - energyState.lastT);
+      energyState.lastT = now;
+      energyState.t += dt;
+
+      const e0 = parseFloat(document.getElementById('en-e0').value);
+      const A  = parseFloat(document.getElementById('en-area').value);
+      const dur = parseFloat(document.getElementById('en-dt').value);
+      const mode = energyState.mode;
+
+      // Physics
+      const B0 = e0 / C;
+      const I = (e0 * e0) / (2 * MU0 * C);   // W/m²  (time-averaged)
+      const power = I * A;                    // W
+      const energy = power * dur;             // J
+      const pressure = (mode === 'reflect' ? 2 : 1) * I / C;
+      const force = pressure * A;
+      const momentum = force * dur;           // kg·m/s
+
+      document.getElementById('en-e0-out').textContent = e0.toFixed(0);
+      document.getElementById('en-b0-out').textContent = (B0 * 1e6).toFixed(2);
+      document.getElementById('en-I-out').textContent = fmtSci(I, 3);
+      document.getElementById('en-P-out').textContent = fmtSci(power, 3);
+      document.getElementById('en-U-out').textContent = fmtSci(energy, 3);
+      document.getElementById('en-press-out').textContent = fmtSci(pressure, 3);
+      document.getElementById('en-F-out').textContent = fmtSci(force, 3);
+      document.getElementById('en-mom-out').textContent = fmtSci(momentum, 3);
+
+      // ===== Visual =====
+      // Beam coming from the left, hitting a surface on the right.
+      const beamY = h / 2;
+      const beamLeftX = 60;
+      const surfaceX = w - 200;
+      const beamWidth = 180; // visual height of the beam
+
+      // Draw beam axis
+      ctx.strokeStyle = '#243044';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(beamLeftX, beamY);
+      ctx.lineTo(surfaceX, beamY);
+      ctx.stroke();
+
+      // Animate sinusoidal E (vertical) and B (depth, drawn diagonally) along the beam
+      const cycles = 3;
+      const omegaVis = 4.0;          // visual angular speed
+      const visualPhase = energyState.t * omegaVis;
+      const N = 70;
+      const axStart = beamLeftX, axEnd = surfaceX;
+      const visualE0 = Math.min(70, e0 / 2000 * 70 + 18);
+      const visualB0 = visualE0 * 0.7;
+      const zOffsetX = Math.cos(-0.45) * 0.55, zOffsetY = Math.sin(-0.45) * 0.55;
+
+      // E curve
+      ctx.strokeStyle = '#58a6ff';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      for (let i = 0; i <= N; i++) {
+        const xF = i / N;
+        const xPix = axStart + xF * (axEnd - axStart);
+        const phase = cycles * 2 * Math.PI * xF - visualPhase;
+        const E = visualE0 * Math.cos(phase);
+        if (i === 0) ctx.moveTo(xPix, beamY - E);
+        else ctx.lineTo(xPix, beamY - E);
+      }
+      ctx.stroke();
+
+      // B curve (diagonal)
+      ctx.strokeStyle = '#d29922';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      for (let i = 0; i <= N; i++) {
+        const xF = i / N;
+        const xPix = axStart + xF * (axEnd - axStart);
+        const phase = cycles * 2 * Math.PI * xF - visualPhase;
+        const B = visualB0 * Math.cos(phase);
+        const px = xPix + B * zOffsetX;
+        const py = beamY + B * zOffsetY;
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+
+      // Poynting arrows along the axis
+      ctx.fillStyle = '#3fb950';
+      ctx.strokeStyle = '#3fb950';
+      ctx.lineWidth = 2;
+      const numS = 6;
+      const animOff = (energyState.t * 60) % 60;
+      for (let i = 0; i < numS; i++) {
+        const xPix = axStart + 30 + ((i * 60 + animOff) % (axEnd - axStart - 30));
+        const yArr = beamY + 60;
+        ctx.beginPath();
+        ctx.moveTo(xPix, yArr);
+        ctx.lineTo(xPix + 22, yArr);
+        ctx.stroke();
+        drawArrowHead(ctx, xPix + 22, yArr, 1, 0, 7);
+      }
+      ctx.fillStyle = '#3fb950';
+      ctx.font = '12px JetBrains Mono, monospace';
+      ctx.fillText('S = (1/μ₀) E × B', axStart, beamY + 78);
+
+      // Surface
+      const sH = beamWidth + 30;
+      const sY = beamY - sH / 2;
+      if (mode === 'absorb') {
+        ctx.fillStyle = '#1a2332';
+        ctx.fillRect(surfaceX, sY, 24, sH);
+        ctx.strokeStyle = '#8b9cb3';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(surfaceX, sY, 24, sH);
+        ctx.fillStyle = '#8b9cb3';
+        ctx.font = '12px DM Sans, sans-serif';
+        ctx.fillText('absorbing', surfaceX - 8, sY - 8);
+        ctx.fillText('surface', surfaceX - 4, sY - 26);
+      } else {
+        // mirror
+        const grad = ctx.createLinearGradient(surfaceX, 0, surfaceX + 24, 0);
+        grad.addColorStop(0, '#a371f7');
+        grad.addColorStop(1, '#58a6ff');
+        ctx.fillStyle = grad;
+        ctx.fillRect(surfaceX, sY, 24, sH);
+        ctx.strokeStyle = '#e6edf3';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(surfaceX, sY, 24, sH);
+        ctx.fillStyle = '#e6edf3';
+        ctx.font = '12px DM Sans, sans-serif';
+        ctx.fillText('mirror', surfaceX + 1, sY - 8);
+        // Reflected beam: small leftward sinusoid above the main one
+        ctx.strokeStyle = '#58a6ff';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath();
+        for (let i = 0; i <= 50; i++) {
+          const xF = i / 50;
+          const xPix = surfaceX - xF * 200;
+          const phase = cycles * 2 * Math.PI * xF + visualPhase; // reversed
+          const E = visualE0 * 0.7 * Math.cos(phase);
+          if (i === 0) ctx.moveTo(xPix, beamY - 70 - E * 0.6);
+          else ctx.lineTo(xPix, beamY - 70 - E * 0.6);
+        }
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      // Momentum-kick arrow on the surface (rightward kick)
+      ctx.fillStyle = '#a371f7';
+      ctx.strokeStyle = '#a371f7';
+      ctx.lineWidth = 3;
+      const kickLen = 18 + Math.min(50, (pressure * 1e6));  // visual scale; tied loosely to magnitude
+      ctx.beginPath();
+      ctx.moveTo(surfaceX + 24, beamY - 90);
+      ctx.lineTo(surfaceX + 24 + kickLen, beamY - 90);
+      ctx.stroke();
+      drawArrowHead(ctx, surfaceX + 24 + kickLen, beamY - 90, 1, 0, 10);
+      ctx.fillStyle = '#a371f7';
+      ctx.font = '12px JetBrains Mono, monospace';
+      ctx.fillText('F = P · A', surfaceX + 24, beamY - 96);
+
+      // Beam edges (dotted box showing the area A as a cross-section)
+      ctx.strokeStyle = '#58a6ff';
+      ctx.setLineDash([3, 4]);
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(beamLeftX, beamY - beamWidth / 2);
+      ctx.lineTo(surfaceX, beamY - beamWidth / 2);
+      ctx.moveTo(beamLeftX, beamY + beamWidth / 2);
+      ctx.lineTo(surfaceX, beamY + beamWidth / 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#8b9cb3';
+      ctx.font = '11px JetBrains Mono, monospace';
+      ctx.fillText('cross-section A', beamLeftX, beamY - beamWidth / 2 - 6);
+    }
+
+    // ============================================================
+    // Animation loop
+    // ============================================================
+    function loop() {
+      const active = document.querySelector('section.active');
+      if (active) {
+        if (active.id === 'wave') drawWaveScene();
+        else if (active.id === 'snapshot') drawSnapshot();
+        else if (active.id === 'energy') drawEnergyScene();
+      }
+      requestAnimationFrame(loop);
+    }
+    drawWaveScene();
+    loop();
+  </script>
+</body>
+</html>
