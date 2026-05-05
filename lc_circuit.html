@@ -308,6 +308,11 @@ navButtons.forEach(btn => btn.addEventListener('click', () => {
 // Internal SI units. UI exposes mH, μF, μC for readability.
 function omegaOf(L_H, C_F) { return 1 / Math.sqrt(L_H * C_F); }
 
+// Real LC periods at these scales are a few ms — animating at 1:1 is a blur.
+// Slow sim-time by this factor so the default period plays out over ~1.5 s wall clock.
+// Readouts still show the true physical values.
+const TIME_SCALE = 1 / 500;
+
 // --------- Section 1: Charge & Current ----------
 (function() {
   const canvas = document.getElementById('canvas-qi');
@@ -322,8 +327,8 @@ function omegaOf(L_H, C_F) { return 1 / Math.sqrt(L_H * C_F); }
   let t = 0;       // simulated seconds
   let last = null; // wallclock ms
 
-  // History buffer for waveform (in seconds, simulated time)
-  const HIST_SPAN = 0.080; // 80 ms window
+  // Window adapts to current period: always show ~3 periods of sim time.
+  let HIST_SPAN = 0.080;
   const history = []; // {t, q_uC, i_mA}
 
   function params() {
@@ -551,12 +556,13 @@ function omegaOf(L_H, C_F) { return 1 / Math.sqrt(L_H * C_F); }
 
   function frame(now) {
     if (last == null) last = now;
-    const dt = (now - last) / 1000;
+    const dt = ((now - last) / 1000) * TIME_SCALE;
     last = now;
     if (playing) t += dt;
 
     const p = params();
     const r = readouts(p);
+    HIST_SPAN = 3 * r.T;
 
     // Push history sample
     history.push({ t, q_uC: p.Q0*Math.cos(p.w*t)*1e6, i_mA: -p.Q0*p.w*Math.sin(p.w*t)*1000 });
@@ -604,7 +610,7 @@ function omegaOf(L_H, C_F) { return 1 / Math.sqrt(L_H * C_F); }
   let last = null;
   let offset = false;
 
-  const HIST_SPAN = 0.080;
+  let HIST_SPAN = 0.080;
   const history = []; // {t, vc, vl}
 
   function params() {
@@ -617,12 +623,13 @@ function omegaOf(L_H, C_F) { return 1 / Math.sqrt(L_H * C_F); }
 
   function frame(now) {
     if (last == null) last = now;
-    const dt = (now - last) / 1000;
+    const dt = ((now - last) / 1000) * TIME_SCALE;
     last = now;
     if (playing) t += dt;
 
     const p = params();
     const T = 2*Math.PI/p.w;
+    HIST_SPAN = 3 * T;
     const Vmax = p.Q0 / p.C;
     const vc = Vmax * Math.cos(p.w * t);
     const vl = Vmax * Math.cos(p.w * t); // = q/C by Kirchhoff
@@ -750,7 +757,7 @@ function omegaOf(L_H, C_F) { return 1 / Math.sqrt(L_H * C_F); }
   let playing = true;
   let t = 0;
   let last = null;
-  const HIST_SPAN = 0.080;
+  let HIST_SPAN = 0.080;
   const history = []; // {t, uc, ul}
 
   function params() {
@@ -763,12 +770,13 @@ function omegaOf(L_H, C_F) { return 1 / Math.sqrt(L_H * C_F); }
 
   function frame(now) {
     if (last == null) last = now;
-    const dt = (now - last) / 1000;
+    const dt = ((now - last) / 1000) * TIME_SCALE;
     last = now;
     if (playing) t += dt;
 
     const p = params();
     const T = 2*Math.PI/p.w;
+    HIST_SPAN = 3 * T;
     const U0 = p.Q0*p.Q0 / (2*p.C);            // J
     const q = p.Q0 * Math.cos(p.w * t);
     const i = -p.Q0 * p.w * Math.sin(p.w * t);
