@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LC Circuit Oscillations — PHYS 151</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f1419;
+      --surface: #1a2332;
+      --surface2: #243044;
+      --text: #e6edf3;
+      --text-muted: #8b9cb3;
+      --accent: #58a6ff;
+      --accent-pos: #3fb950;
+      --accent-neg: #f85149;
+      --accent-purple: #a371f7;
+      --accent-amber: #d29922;
+      --accent-cyan: #39d0d8;
+      --border: #30363d;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+    .container { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem; }
+    h1 { font-size: 1.75rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .subtitle { color: var(--text-muted); font-size: 1rem; margin-bottom: 2rem; }
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    nav button {
+      font-family: inherit;
+      font-size: 0.9rem;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    nav button:hover { background: var(--surface2); border-color: var(--accent); }
+    nav button.active { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+    section { display: none; animation: fade 0.3s ease; }
+    section.active { display: block; }
+    @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .card h2 { font-size: 1.25rem; margin-bottom: 0.75rem; color: var(--accent); }
+    .card p { color: var(--text-muted); margin-bottom: 0.75rem; font-size: 0.95rem; }
+    .viz-box {
+      background: #0a0e14;
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin: 1rem 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .viz-box canvas { display: block; max-width: 100%; }
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+    }
+    .controls label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      min-width: 100px;
+    }
+    input[type="range"] {
+      width: 160px;
+      height: 6px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: var(--surface2);
+      border-radius: 3px;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+    }
+    .btn {
+      font-family: inherit;
+      font-size: 0.85rem;
+      padding: 0.4rem 0.9rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .btn:hover { background: var(--surface); border-color: var(--accent); }
+    .btn.toggled { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+    .formula {
+      font-family: 'JetBrains Mono', monospace;
+      background: var(--surface2);
+      padding: 0.5rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      margin: 0.5rem 0;
+      display: inline-block;
+    }
+    .readout-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+    .readout {
+      font-family: 'JetBrains Mono', monospace;
+      background: var(--surface2);
+      padding: 0.5rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      color: var(--text);
+    }
+    .readout .lbl { color: var(--text-muted); margin-right: 0.4rem; }
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-top: 0.75rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    .legend span { display: flex; align-items: center; gap: 0.35rem; }
+    .legend .swatch { width: 16px; height: 4px; border-radius: 2px; }
+    .legend .swatch.q { background: var(--accent); }
+    .legend .swatch.i { background: var(--accent-amber); }
+    .legend .swatch.vc { background: var(--accent); }
+    .legend .swatch.vl { background: var(--accent-pos); }
+    .legend .swatch.uc { background: var(--accent); }
+    .legend .swatch.ul { background: var(--accent-amber); }
+    .legend .swatch.ut { background: var(--accent-purple); }
+    .key-idea {
+      background: var(--surface2);
+      border-left: 3px solid var(--accent-amber);
+      padding: 0.6rem 0.9rem;
+      border-radius: 4px;
+      color: var(--text);
+      font-size: 0.92rem;
+      margin: 0.75rem 0;
+    }
+    footer { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border); font-size: 0.85rem; color: var(--text-muted); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>LC Circuit Oscillations</h1>
+    <p class="subtitle">An ideal capacitor and inductor trade energy back and forth — charge, current, voltage, and stored energy each oscillate with their own personality.</p>
+
+    <nav>
+      <button data-section="qi" class="active">1. Charge &amp; Current</button>
+      <button data-section="volts">2. Voltages V_C &amp; V_L</button>
+      <button data-section="energy">3. Energy Exchange</button>
+    </nav>
+
+    <!-- Section 1: Charge & Current -->
+    <section id="qi" class="active">
+      <div class="card">
+        <h2>Charge on C and current through L are 90° out of phase</h2>
+        <p>Start with charge <em>Q₀</em> on the capacitor and zero current. The capacitor pushes current into the inductor; the inductor's growing current keeps flowing even after the capacitor empties, recharging it the other way. The cycle repeats forever (no resistance).</p>
+        <p class="formula">q(t) = Q₀ cos(ω t) &nbsp;&nbsp;&nbsp; i(t) = dq/dt = −Q₀ ω sin(ω t) &nbsp;&nbsp;&nbsp; ω = 1/√(LC)</p>
+        <div class="key-idea">
+          When q is at its peak, i = 0 (charge sits still on the plates). When q = 0, i is at its peak (charge is mid-flight through the inductor). They are exactly a quarter period apart.
+        </div>
+        <div class="viz-box">
+          <canvas id="canvas-qi" width="820" height="440"></canvas>
+        </div>
+        <div class="controls">
+          <label>L (mH):</label>
+          <input type="range" id="qi-L" min="1" max="50" value="10" step="1">
+          <label>C (μF):</label>
+          <input type="range" id="qi-C" min="1" max="100" value="25" step="1">
+          <label>Q₀ (μC):</label>
+          <input type="range" id="qi-Q0" min="1" max="20" value="10" step="1">
+          <button class="btn toggled" id="qi-play">⏸ pause</button>
+          <button class="btn" id="qi-reset">↺ reset</button>
+        </div>
+        <div class="readout-row">
+          <span class="readout"><span class="lbl">ω =</span><span id="qi-w-out">—</span> rad/s</span>
+          <span class="readout"><span class="lbl">f =</span><span id="qi-f-out">—</span> Hz</span>
+          <span class="readout"><span class="lbl">T =</span><span id="qi-T-out">—</span> ms</span>
+          <span class="readout"><span class="lbl">i_max =</span><span id="qi-imax-out">—</span> mA</span>
+          <span class="readout"><span class="lbl">q(t) =</span><span id="qi-q-out">—</span> μC</span>
+          <span class="readout"><span class="lbl">i(t) =</span><span id="qi-i-out">—</span> mA</span>
+        </div>
+        <div class="legend">
+          <span><span class="swatch q"></span> q(t) — charge on capacitor</span>
+          <span><span class="swatch i"></span> i(t) — current through inductor</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2: Voltage comparison -->
+    <section id="volts">
+      <div class="card">
+        <h2>Kirchhoff: at every instant V_C = V_L</h2>
+        <p>Going around the loop, the voltage drop across the capacitor equals the back-EMF of the inductor. So V<sub>C</sub>(t) and V<sub>L</sub>(t) trace the <em>same</em> curve — they oscillate in phase with q(t), not with i(t). Their <em>peak</em> values both equal Q₀/C.</p>
+        <p class="formula">V_C(t) = q(t)/C &nbsp;&nbsp;&nbsp; V_L(t) = L·di/dt = q(t)/C &nbsp;&nbsp;&nbsp; V_max = Q₀/C</p>
+        <div class="key-idea">
+          The two curves overlap exactly. That isn't a coincidence — it's the loop rule applied to a circuit with no resistor, no battery, and no other element. If you change L, V_max doesn't change; if you change C, both curves rescale together.
+        </div>
+        <div class="viz-box">
+          <canvas id="canvas-volts" width="820" height="380"></canvas>
+        </div>
+        <div class="controls">
+          <label>L (mH):</label>
+          <input type="range" id="v-L" min="1" max="50" value="10" step="1">
+          <label>C (μF):</label>
+          <input type="range" id="v-C" min="1" max="100" value="25" step="1">
+          <label>Q₀ (μC):</label>
+          <input type="range" id="v-Q0" min="1" max="20" value="10" step="1">
+          <button class="btn toggled" id="v-play">⏸ pause</button>
+          <button class="btn" id="v-offset">offset traces</button>
+        </div>
+        <div class="readout-row">
+          <span class="readout"><span class="lbl">V_max = Q₀/C =</span><span id="v-vmax-out">—</span> V</span>
+          <span class="readout"><span class="lbl">T =</span><span id="v-T-out">—</span> ms</span>
+          <span class="readout"><span class="lbl">V_C =</span><span id="v-vc-out">—</span> V</span>
+          <span class="readout"><span class="lbl">V_L =</span><span id="v-vl-out">—</span> V</span>
+        </div>
+        <div class="legend">
+          <span><span class="swatch vc"></span> V_C(t) = q/C</span>
+          <span><span class="swatch vl"></span> V_L(t) = L·di/dt</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 3: Energy -->
+    <section id="energy">
+      <div class="card">
+        <h2>Energy sloshes between C and L at twice the frequency</h2>
+        <p>Capacitor energy <em>U<sub>C</sub></em> = q²/(2C) and inductor energy <em>U<sub>L</sub></em> = ½Li² are both squared quantities, so each oscillates at <strong>2ω</strong>. They are perfectly complementary: when one is full, the other is empty. Their sum is constant.</p>
+        <p class="formula">U_C(t) = q²/(2C) = U₀ cos²(ωt) &nbsp;&nbsp;&nbsp; U_L(t) = ½Li² = U₀ sin²(ωt) &nbsp;&nbsp;&nbsp; U₀ = Q₀²/(2C)</p>
+        <div class="key-idea">
+          Energy oscillates twice as fast as charge. cos²(ωt) + sin²(ωt) = 1 isn't just trig — it's energy conservation. The ideal LC tank loses nothing; the same U₀ keeps moving back and forth.
+        </div>
+        <div class="viz-box">
+          <canvas id="canvas-energy" width="820" height="420"></canvas>
+        </div>
+        <div class="controls">
+          <label>L (mH):</label>
+          <input type="range" id="e-L" min="1" max="50" value="10" step="1">
+          <label>C (μF):</label>
+          <input type="range" id="e-C" min="1" max="100" value="25" step="1">
+          <label>Q₀ (μC):</label>
+          <input type="range" id="e-Q0" min="1" max="20" value="10" step="1">
+          <button class="btn toggled" id="e-play">⏸ pause</button>
+        </div>
+        <div class="readout-row">
+          <span class="readout"><span class="lbl">U₀ = Q₀²/(2C) =</span><span id="e-u0-out">—</span> μJ</span>
+          <span class="readout"><span class="lbl">T_energy = T/2 =</span><span id="e-Te-out">—</span> ms</span>
+          <span class="readout"><span class="lbl">U_C =</span><span id="e-uc-out">—</span> μJ</span>
+          <span class="readout"><span class="lbl">U_L =</span><span id="e-ul-out">—</span> μJ</span>
+          <span class="readout"><span class="lbl">U_total =</span><span id="e-ut-out">—</span> μJ</span>
+        </div>
+        <div class="legend">
+          <span><span class="swatch uc"></span> U_C — capacitor (electric)</span>
+          <span><span class="swatch ul"></span> U_L — inductor (magnetic)</span>
+          <span><span class="swatch ut"></span> U_total — conserved</span>
+        </div>
+      </div>
+    </section>
+
+    <footer>PHYS 151 · LC oscillations · units: ms / μC / mA / V / μJ for readability — physics is identical at any scale.</footer>
+  </div>
+
+<script>
+// --------- Navigation ----------
+const navButtons = document.querySelectorAll('nav button');
+const sections = document.querySelectorAll('section');
+navButtons.forEach(btn => btn.addEventListener('click', () => {
+  navButtons.forEach(b => b.classList.remove('active'));
+  sections.forEach(s => s.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(btn.dataset.section).classList.add('active');
+}));
+
+// --------- Shared physics ----------
+// Internal SI units. UI exposes mH, μF, μC for readability.
+function omegaOf(L_H, C_F) { return 1 / Math.sqrt(L_H * C_F); }
+
+// --------- Section 1: Charge & Current ----------
+(function() {
+  const canvas = document.getElementById('canvas-qi');
+  const ctx = canvas.getContext('2d');
+  const L_in = document.getElementById('qi-L');
+  const C_in = document.getElementById('qi-C');
+  const Q_in = document.getElementById('qi-Q0');
+  const playBtn = document.getElementById('qi-play');
+  const resetBtn = document.getElementById('qi-reset');
+
+  let playing = true;
+  let t = 0;       // simulated seconds
+  let last = null; // wallclock ms
+
+  // History buffer for waveform (in seconds, simulated time)
+  const HIST_SPAN = 0.080; // 80 ms window
+  const history = []; // {t, q_uC, i_mA}
+
+  function params() {
+    const L = +L_in.value * 1e-3;   // H
+    const C = +C_in.value * 1e-6;   // F
+    const Q0 = +Q_in.value * 1e-6;  // C
+    const w = omegaOf(L, C);
+    return { L, C, Q0, w };
+  }
+
+  function readouts(p) {
+    const T = 2*Math.PI/p.w;
+    const f = 1/T;
+    const imax = p.Q0 * p.w; // A
+    const q = p.Q0 * Math.cos(p.w * t);
+    const i = -p.Q0 * p.w * Math.sin(p.w * t);
+    document.getElementById('qi-w-out').textContent = p.w.toFixed(0);
+    document.getElementById('qi-f-out').textContent = f.toFixed(0);
+    document.getElementById('qi-T-out').textContent = (T*1000).toFixed(2);
+    document.getElementById('qi-imax-out').textContent = (imax*1000).toFixed(2);
+    document.getElementById('qi-q-out').textContent = (q*1e6).toFixed(2);
+    document.getElementById('qi-i-out').textContent = (i*1000).toFixed(2);
+    return { q, i, T, imax };
+  }
+
+  function drawCircuit(cx, cy, q, qNorm, iNorm, p) {
+    // Layout: capacitor on the left vertical, inductor on the right vertical, top & bottom wires connect them.
+    const w = 240, h = 160;
+    const x0 = cx - w/2, y0 = cy - h/2;
+    const x1 = x0 + w, y1 = y0 + h;
+
+    // Wires
+    ctx.strokeStyle = '#4a5468';
+    ctx.lineWidth = 2;
+    // top wire (with gap for capacitor)
+    ctx.beginPath();
+    ctx.moveTo(x0+30, y0); ctx.lineTo(x1-40, y0);
+    ctx.moveTo(x0+30, y1); ctx.lineTo(x1-40, y1);
+    // left wire down to capacitor
+    ctx.moveTo(x0+30, y0); ctx.lineTo(x0+30, y0 + h/2 - 14);
+    ctx.moveTo(x0+30, y1); ctx.lineTo(x0+30, y0 + h/2 + 14);
+    // right wire from inductor
+    ctx.moveTo(x1-40, y0); ctx.lineTo(x1-40, y0 + h/2 - 24);
+    ctx.moveTo(x1-40, y1); ctx.lineTo(x1-40, y0 + h/2 + 24);
+    ctx.stroke();
+
+    // Capacitor plates (horizontal). qNorm = q/Q0 in [-1, 1]
+    const plateW = 50;
+    const plateGap = 10;
+    const cxCap = x0+30;
+    const cyCap = y0 + h/2;
+    // top plate (positive when qNorm > 0)
+    const topPos = qNorm > 0;
+    ctx.strokeStyle = '#4a5468';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(cxCap - plateW/2, cyCap - plateGap);
+    ctx.lineTo(cxCap + plateW/2, cyCap - plateGap);
+    ctx.moveTo(cxCap - plateW/2, cyCap + plateGap);
+    ctx.lineTo(cxCap + plateW/2, cyCap + plateGap);
+    ctx.stroke();
+    // charge symbols on plates, intensity scales with |qNorm|
+    const alpha = Math.min(1, Math.abs(qNorm));
+    if (alpha > 0.02) {
+      ctx.font = '12px JetBrains Mono';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = `rgba(248, 81, 73, ${alpha})`;
+      ctx.fillText(topPos ? '+' : '−', cxCap, cyCap - plateGap - 10);
+      ctx.fillStyle = `rgba(63, 185, 80, ${alpha})`;
+      ctx.fillText(topPos ? '−' : '+', cxCap, cyCap + plateGap + 10);
+    }
+    // C label
+    ctx.fillStyle = '#8b9cb3';
+    ctx.font = '12px JetBrains Mono';
+    ctx.textAlign = 'right';
+    ctx.fillText(`C = ${(+C_in.value)} μF`, cxCap - plateW/2 - 6, cyCap);
+
+    // Inductor (loops)
+    const cxInd = x1-40;
+    const cyInd = y0 + h/2;
+    ctx.strokeStyle = '#4a5468';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    const numLoops = 4;
+    const loopR = 10;
+    const loopH = 12;
+    const startY = cyInd - numLoops*loopH/2 - 12;
+    ctx.moveTo(cxInd, cyInd - 24);
+    for (let k = 0; k < numLoops; k++) {
+      const y = startY + k*loopH + 6;
+      ctx.arc(cxInd, y + loopH/2, loopR, -Math.PI/2, Math.PI/2, false);
+    }
+    ctx.moveTo(cxInd, cyInd + 24);
+    ctx.stroke();
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#8b9cb3';
+    ctx.fillText(`L = ${(+L_in.value)} mH`, cxInd + loopR + 6, cyInd);
+
+    // Current arrows along the wires. iNorm in [-1, 1]; positive = clockwise.
+    const arrowAlpha = Math.min(1, Math.abs(iNorm));
+    if (arrowAlpha > 0.04) {
+      ctx.fillStyle = `rgba(210, 153, 34, ${arrowAlpha})`;
+      const dir = iNorm > 0 ? 1 : -1;
+      // Top wire: draw arrow at midpoint
+      drawArrow((x0+30 + x1-40)/2, y0 - 12, 14*dir, 0);
+      // Bottom wire: opposite direction
+      drawArrow((x0+30 + x1-40)/2, y1 + 12, -14*dir, 0);
+      // Left side (capacitor side): goes down on top half if dir=+1
+      drawArrow(x0+30 - 12, y0 + h/4, 0, 14*dir);
+      // Right side (inductor side): up if dir=+1
+      drawArrow(x1-40 + 12, y0 + 3*h/4, 0, -14*dir);
+    }
+
+    // tag
+    ctx.fillStyle = '#8b9cb3';
+    ctx.font = '12px DM Sans';
+    ctx.textAlign = 'center';
+    ctx.fillText('LC tank', cx, y1 + 30);
+  }
+
+  function drawArrow(x, y, dx, dy) {
+    ctx.beginPath();
+    ctx.moveTo(x - dx/2, y - dy/2);
+    ctx.lineTo(x + dx/2, y + dy/2);
+    ctx.strokeStyle = ctx.fillStyle;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    // head
+    const ang = Math.atan2(dy, dx);
+    ctx.beginPath();
+    ctx.moveTo(x + dx/2, y + dy/2);
+    ctx.lineTo(x + dx/2 - 6*Math.cos(ang - 0.4), y + dy/2 - 6*Math.sin(ang - 0.4));
+    ctx.lineTo(x + dx/2 - 6*Math.cos(ang + 0.4), y + dy/2 - 6*Math.sin(ang + 0.4));
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  function drawWaveform(p, q, i, T) {
+    const W = canvas.width, H = canvas.height;
+    const px0 = 70, py0 = 250;
+    const pw = W - px0 - 30, ph = 160;
+
+    // Axes
+    ctx.strokeStyle = '#30363d';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(px0, py0); ctx.lineTo(px0 + pw, py0); // x-axis (zero line)
+    ctx.moveTo(px0, py0 - ph/2); ctx.lineTo(px0, py0 + ph/2); // y-axis
+    ctx.stroke();
+
+    // Time gridlines every quarter period
+    ctx.strokeStyle = '#1d2734';
+    for (let k = 1; k < 5; k++) {
+      const tau = k * T / 4;
+      const x = px0 + pw - tau / HIST_SPAN * pw;
+      if (x > px0) {
+        ctx.beginPath();
+        ctx.moveTo(x, py0 - ph/2);
+        ctx.lineTo(x, py0 + ph/2);
+        ctx.stroke();
+      }
+    }
+
+    // Labels
+    ctx.fillStyle = '#8b9cb3';
+    ctx.font = '11px JetBrains Mono';
+    ctx.textAlign = 'right';
+    ctx.fillText('+Q₀', px0 - 6, py0 - ph/2 + 4);
+    ctx.fillText('0', px0 - 6, py0 + 4);
+    ctx.fillText('−Q₀', px0 - 6, py0 + ph/2 + 4);
+    ctx.textAlign = 'left';
+    ctx.fillText('time →', px0 + pw - 50, py0 + ph/2 + 16);
+    ctx.textAlign = 'center';
+    ctx.fillText('q (μC) and i (mA), normalized', px0 + pw/2, py0 - ph/2 - 10);
+
+    // Plot history
+    if (history.length < 2) return;
+    const tNow = t;
+    const tMin = tNow - HIST_SPAN;
+
+    // q(t) trace — blue
+    ctx.strokeStyle = '#58a6ff';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    let started = false;
+    for (const h of history) {
+      if (h.t < tMin) continue;
+      const x = px0 + (h.t - tMin) / HIST_SPAN * pw;
+      const yNorm = h.q_uC / (p.Q0 * 1e6); // -1..1
+      const y = py0 - yNorm * (ph/2 - 4);
+      if (!started) { ctx.moveTo(x, y); started = true; }
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // i(t) trace — amber, normalized by i_max in mA
+    ctx.strokeStyle = '#d29922';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    started = false;
+    const imax_mA = p.Q0 * p.w * 1000;
+    for (const h of history) {
+      if (h.t < tMin) continue;
+      const x = px0 + (h.t - tMin) / HIST_SPAN * pw;
+      const yNorm = imax_mA > 0 ? h.i_mA / imax_mA : 0;
+      const y = py0 - yNorm * (ph/2 - 4);
+      if (!started) { ctx.moveTo(x, y); started = true; }
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // Mark "now" on the right edge
+    ctx.fillStyle = '#58a6ff';
+    const qNorm_now = Math.cos(p.w * tNow);
+    ctx.beginPath();
+    ctx.arc(px0 + pw, py0 - qNorm_now * (ph/2 - 4), 4, 0, 2*Math.PI);
+    ctx.fill();
+    ctx.fillStyle = '#d29922';
+    const iNorm_now = -Math.sin(p.w * tNow);
+    ctx.beginPath();
+    ctx.arc(px0 + pw, py0 - iNorm_now * (ph/2 - 4), 4, 0, 2*Math.PI);
+    ctx.fill();
+  }
+
+  function frame(now) {
+    if (last == null) last = now;
+    const dt = (now - last) / 1000;
+    last = now;
+    if (playing) t += dt;
+
+    const p = params();
+    const r = readouts(p);
+
+    // Push history sample
+    history.push({ t, q_uC: p.Q0*Math.cos(p.w*t)*1e6, i_mA: -p.Q0*p.w*Math.sin(p.w*t)*1000 });
+    while (history.length && history[0].t < t - HIST_SPAN - 0.01) history.shift();
+
+    // Clear
+    ctx.fillStyle = '#0a0e14';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Circuit (top half)
+    const qNorm = Math.cos(p.w*t);
+    const iNorm = -Math.sin(p.w*t);
+    drawCircuit(canvas.width/2, 110, p.Q0*qNorm, qNorm, iNorm, p);
+
+    // Waveform (bottom half)
+    drawWaveform(p, r.q, r.i, r.T);
+
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  playBtn.addEventListener('click', () => {
+    playing = !playing;
+    playBtn.textContent = playing ? '⏸ pause' : '▶ play';
+    playBtn.classList.toggle('toggled', playing);
+  });
+  resetBtn.addEventListener('click', () => {
+    t = 0;
+    history.length = 0;
+  });
+})();
+
+// --------- Section 2: Voltages V_C and V_L ----------
+(function() {
+  const canvas = document.getElementById('canvas-volts');
+  const ctx = canvas.getContext('2d');
+  const L_in = document.getElementById('v-L');
+  const C_in = document.getElementById('v-C');
+  const Q_in = document.getElementById('v-Q0');
+  const playBtn = document.getElementById('v-play');
+  const offsetBtn = document.getElementById('v-offset');
+
+  let playing = true;
+  let t = 0;
+  let last = null;
+  let offset = false;
+
+  const HIST_SPAN = 0.080;
+  const history = []; // {t, vc, vl}
+
+  function params() {
+    const L = +L_in.value * 1e-3;
+    const C = +C_in.value * 1e-6;
+    const Q0 = +Q_in.value * 1e-6;
+    const w = omegaOf(L, C);
+    return { L, C, Q0, w };
+  }
+
+  function frame(now) {
+    if (last == null) last = now;
+    const dt = (now - last) / 1000;
+    last = now;
+    if (playing) t += dt;
+
+    const p = params();
+    const T = 2*Math.PI/p.w;
+    const Vmax = p.Q0 / p.C;
+    const vc = Vmax * Math.cos(p.w * t);
+    const vl = Vmax * Math.cos(p.w * t); // = q/C by Kirchhoff
+
+    history.push({ t, vc, vl });
+    while (history.length && history[0].t < t - HIST_SPAN - 0.01) history.shift();
+
+    // readouts
+    document.getElementById('v-vmax-out').textContent = Vmax.toFixed(2);
+    document.getElementById('v-T-out').textContent = (T*1000).toFixed(2);
+    document.getElementById('v-vc-out').textContent = vc.toFixed(2);
+    document.getElementById('v-vl-out').textContent = vl.toFixed(2);
+
+    // draw
+    const W = canvas.width, H = canvas.height;
+    ctx.fillStyle = '#0a0e14';
+    ctx.fillRect(0, 0, W, H);
+
+    const px0 = 80, py0 = H/2;
+    const pw = W - px0 - 30, ph = H - 80;
+
+    // axes
+    ctx.strokeStyle = '#30363d';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(px0, py0); ctx.lineTo(px0 + pw, py0);
+    ctx.moveTo(px0, py0 - ph/2); ctx.lineTo(px0, py0 + ph/2);
+    ctx.stroke();
+
+    // gridlines T/4
+    ctx.strokeStyle = '#1d2734';
+    for (let k = 1; k < 5; k++) {
+      const tau = k * T / 4;
+      const x = px0 + pw - tau / HIST_SPAN * pw;
+      if (x > px0) {
+        ctx.beginPath();
+        ctx.moveTo(x, py0 - ph/2);
+        ctx.lineTo(x, py0 + ph/2);
+        ctx.stroke();
+      }
+    }
+
+    // Labels
+    ctx.fillStyle = '#8b9cb3';
+    ctx.font = '11px JetBrains Mono';
+    ctx.textAlign = 'right';
+    ctx.fillText(`+${Vmax.toFixed(1)} V`, px0 - 6, py0 - ph/2 + 10);
+    ctx.fillText('0', px0 - 6, py0 + 4);
+    ctx.fillText(`−${Vmax.toFixed(1)} V`, px0 - 6, py0 + ph/2 - 4);
+    ctx.textAlign = 'center';
+    ctx.fillText('voltage (V) vs time', px0 + pw/2, 20);
+
+    if (history.length < 2) { requestAnimationFrame(frame); return; }
+    const tMin = t - HIST_SPAN;
+
+    // V_C — accent blue, thicker
+    ctx.strokeStyle = '#58a6ff';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    let started = false;
+    const ofs = offset ? 8 : 0;
+    for (const h of history) {
+      if (h.t < tMin) continue;
+      const x = px0 + (h.t - tMin) / HIST_SPAN * pw;
+      const yNorm = h.vc / Vmax;
+      const y = py0 - yNorm * (ph/2 - 6) - ofs;
+      if (!started) { ctx.moveTo(x, y); started = true; }
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // V_L — green, dashed, thinner
+    ctx.strokeStyle = '#3fb950';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([6, 4]);
+    ctx.beginPath();
+    started = false;
+    for (const h of history) {
+      if (h.t < tMin) continue;
+      const x = px0 + (h.t - tMin) / HIST_SPAN * pw;
+      const yNorm = h.vl / Vmax;
+      const y = py0 - yNorm * (ph/2 - 6) + ofs;
+      if (!started) { ctx.moveTo(x, y); started = true; }
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // dots at "now"
+    const xNow = px0 + pw;
+    ctx.fillStyle = '#58a6ff';
+    ctx.beginPath();
+    ctx.arc(xNow, py0 - (vc/Vmax) * (ph/2 - 6) - ofs, 5, 0, 2*Math.PI);
+    ctx.fill();
+    ctx.fillStyle = '#3fb950';
+    ctx.beginPath();
+    ctx.arc(xNow, py0 - (vl/Vmax) * (ph/2 - 6) + ofs, 5, 0, 2*Math.PI);
+    ctx.fill();
+
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  playBtn.addEventListener('click', () => {
+    playing = !playing;
+    playBtn.textContent = playing ? '⏸ pause' : '▶ play';
+    playBtn.classList.toggle('toggled', playing);
+  });
+  offsetBtn.addEventListener('click', () => {
+    offset = !offset;
+    offsetBtn.classList.toggle('toggled', offset);
+    offsetBtn.textContent = offset ? 'overlay traces' : 'offset traces';
+  });
+})();
+
+// --------- Section 3: Energy ----------
+(function() {
+  const canvas = document.getElementById('canvas-energy');
+  const ctx = canvas.getContext('2d');
+  const L_in = document.getElementById('e-L');
+  const C_in = document.getElementById('e-C');
+  const Q_in = document.getElementById('e-Q0');
+  const playBtn = document.getElementById('e-play');
+
+  let playing = true;
+  let t = 0;
+  let last = null;
+  const HIST_SPAN = 0.080;
+  const history = []; // {t, uc, ul}
+
+  function params() {
+    const L = +L_in.value * 1e-3;
+    const C = +C_in.value * 1e-6;
+    const Q0 = +Q_in.value * 1e-6;
+    const w = omegaOf(L, C);
+    return { L, C, Q0, w };
+  }
+
+  function frame(now) {
+    if (last == null) last = now;
+    const dt = (now - last) / 1000;
+    last = now;
+    if (playing) t += dt;
+
+    const p = params();
+    const T = 2*Math.PI/p.w;
+    const U0 = p.Q0*p.Q0 / (2*p.C);            // J
+    const q = p.Q0 * Math.cos(p.w * t);
+    const i = -p.Q0 * p.w * Math.sin(p.w * t);
+    const uc = q*q / (2*p.C);
+    const ul = 0.5 * p.L * i*i;
+    const ut = uc + ul; // = U0
+
+    history.push({ t, uc, ul });
+    while (history.length && history[0].t < t - HIST_SPAN - 0.01) history.shift();
+
+    document.getElementById('e-u0-out').textContent = (U0*1e6).toFixed(2);
+    document.getElementById('e-Te-out').textContent = (T*500).toFixed(2); // T/2 in ms
+    document.getElementById('e-uc-out').textContent = (uc*1e6).toFixed(2);
+    document.getElementById('e-ul-out').textContent = (ul*1e6).toFixed(2);
+    document.getElementById('e-ut-out').textContent = (ut*1e6).toFixed(2);
+
+    // draw
+    const W = canvas.width, H = canvas.height;
+    ctx.fillStyle = '#0a0e14';
+    ctx.fillRect(0, 0, W, H);
+
+    // Two side-by-side bars + waveform plot below
+    // Bars area
+    const barX = 40, barTop = 30, barH = 200, barW = 60, barGap = 50;
+    // Frame
+    ctx.strokeStyle = '#30363d';
+    ctx.strokeRect(barX, barTop, barW, barH);
+    ctx.strokeRect(barX + barW + barGap, barTop, barW, barH);
+    // Fill (capacitor — blue)
+    ctx.fillStyle = '#58a6ff';
+    const hC = barH * (uc / U0);
+    ctx.fillRect(barX, barTop + barH - hC, barW, hC);
+    // Fill (inductor — amber)
+    ctx.fillStyle = '#d29922';
+    const hL = barH * (ul / U0);
+    ctx.fillRect(barX + barW + barGap, barTop + barH - hL, barW, hL);
+    // Bar labels
+    ctx.fillStyle = '#e6edf3';
+    ctx.font = '13px DM Sans';
+    ctx.textAlign = 'center';
+    ctx.fillText('U_C', barX + barW/2, barTop + barH + 18);
+    ctx.fillText('U_L', barX + barW + barGap + barW/2, barTop + barH + 18);
+    ctx.fillStyle = '#8b9cb3';
+    ctx.font = '11px JetBrains Mono';
+    ctx.fillText(`${(uc*1e6).toFixed(2)} μJ`, barX + barW/2, barTop + barH + 34);
+    ctx.fillText(`${(ul*1e6).toFixed(2)} μJ`, barX + barW + barGap + barW/2, barTop + barH + 34);
+    // U_total label between bars
+    ctx.fillStyle = '#a371f7';
+    ctx.font = '12px JetBrains Mono';
+    ctx.fillText('U_total', barX + barW + barGap/2, barTop - 12);
+    ctx.fillStyle = '#e6edf3';
+    ctx.fillText(`${(ut*1e6).toFixed(2)} μJ`, barX + barW + barGap/2, barTop + 8);
+    // U0 dashed line across both bars (target line)
+    ctx.strokeStyle = '#a371f7';
+    ctx.setLineDash([4, 3]);
+    ctx.beginPath();
+    ctx.moveTo(barX - 4, barTop);
+    ctx.lineTo(barX + 2*barW + barGap + 4, barTop);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Waveform region: plot U_C, U_L, U_total
+    const px0 = 250, py0 = 30, pw = W - px0 - 30, ph = 220;
+    // background grid
+    ctx.strokeStyle = '#30363d';
+    ctx.strokeRect(px0, py0, pw, ph);
+    // gridlines T/2 (energy period)
+    ctx.strokeStyle = '#1d2734';
+    for (let k = 1; k < 6; k++) {
+      const tau = k * T / 4; // mark each T/4 since energy period is T/2
+      const x = px0 + pw - tau / HIST_SPAN * pw;
+      if (x > px0) {
+        ctx.beginPath();
+        ctx.moveTo(x, py0); ctx.lineTo(x, py0 + ph);
+        ctx.stroke();
+      }
+    }
+
+    ctx.fillStyle = '#8b9cb3';
+    ctx.font = '11px JetBrains Mono';
+    ctx.textAlign = 'right';
+    ctx.fillText(`U₀ = ${(U0*1e6).toFixed(2)} μJ`, px0 + pw - 6, py0 + 12);
+    ctx.fillText('0', px0 - 6, py0 + ph - 2);
+    ctx.textAlign = 'center';
+    ctx.fillText('U_C, U_L, U_total over time', px0 + pw/2, py0 + ph + 18);
+
+    if (history.length < 2) {
+      requestAnimationFrame(frame);
+      return;
+    }
+    const tMin = t - HIST_SPAN;
+
+    // U_C — blue
+    ctx.strokeStyle = '#58a6ff';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    let started = false;
+    for (const h of history) {
+      if (h.t < tMin) continue;
+      const x = px0 + (h.t - tMin) / HIST_SPAN * pw;
+      const y = py0 + ph - (h.uc / U0) * (ph - 4);
+      if (!started) { ctx.moveTo(x, y); started = true; }
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // U_L — amber
+    ctx.strokeStyle = '#d29922';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    started = false;
+    for (const h of history) {
+      if (h.t < tMin) continue;
+      const x = px0 + (h.t - tMin) / HIST_SPAN * pw;
+      const y = py0 + ph - (h.ul / U0) * (ph - 4);
+      if (!started) { ctx.moveTo(x, y); started = true; }
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // U_total — purple
+    ctx.strokeStyle = '#a371f7';
+    ctx.lineWidth = 2.5;
+    ctx.setLineDash([6, 4]);
+    ctx.beginPath();
+    started = false;
+    for (const h of history) {
+      if (h.t < tMin) continue;
+      const x = px0 + (h.t - tMin) / HIST_SPAN * pw;
+      const y = py0 + ph - ((h.uc + h.ul) / U0) * (ph - 4);
+      if (!started) { ctx.moveTo(x, y); started = true; }
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  playBtn.addEventListener('click', () => {
+    playing = !playing;
+    playBtn.textContent = playing ? '⏸ pause' : '▶ play';
+    playBtn.classList.toggle('toggled', playing);
+  });
+})();
+</script>
+</body>
+</html>

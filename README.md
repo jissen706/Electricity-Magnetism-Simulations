@@ -23,6 +23,12 @@ A growing collection of self-contained HTML simulations for PHYS 151. Each file 
 2. **Point vs. snapshot views** — Toggle between watching one point oscillate over Δt = T and a snapshot in space spanning Δx = λ.
 3. **Intensity, Poynting vector & radiation pressure** — Vary amplitude / distance and see I, **S**, and P_rad respond.
 
+### 5. `lc_circuit.html` — LC Circuit Oscillations
+Side-by-side comparison of the quantities that oscillate in an ideal LC tank, all driven by ω = 1/√(LC). Sliders for L, C, and Q₀.
+1. **Charge & current** — Animated circuit (charge on plates, current arrows along wires) with a dual-trace plot of q(t) and i(t) showing the 90° phase shift.
+2. **Voltages V_C and V_L** — Both equal q/C by Kirchhoff; traces overlap exactly. "Offset traces" button separates them so the match is visible.
+3. **Energy exchange** — Live bars + waveforms for U_C = q²/(2C), U_L = ½Li², and U_total. Highlights the 2ω frequency and conservation.
+
 ## How to run
 
 Double-click any `.html` file (or drag it into Chrome / Safari / Firefox). No install required. Use the top navigation in each module to switch between sections.
