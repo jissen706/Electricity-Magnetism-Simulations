@@ -14,6 +14,15 @@ A growing collection of self-contained HTML simulations for PHYS 151. Each file 
 1. **Flux Orientation** — Tilt a loop in a uniform **B** field. Live readout of Φ = BA cos θ. Field lines threading the loop are highlighted. Sliders: θ, |B|, area.
 2. **Rotating Loop (Φ vs t)** — Loop spins at angular speed ω; flux traces a cosine in real time. Sets up Faraday's law / AC generators.
 
+### 3. `lenz_law.html` — Lenz's Law (Chunk 3)
+1. **Bar magnet & loop** — Push a bar magnet toward / away from a loop and watch the induced current direction flip to oppose the change in flux. Live Φ(t) and induced-current readouts.
+2. **Loop entering/leaving a B region** — Drag a loop in and out of a uniform field zone; induced EMF and current direction update with the changing flux.
+
+### 4. `em_waves.html` — Electromagnetic Waves
+1. **Wave structure** — 3D view of an EM wave with **E** ⊥ **B** ⊥ direction of propagation. Verifies c = fλ with sliders for frequency and wavelength.
+2. **Point vs. snapshot views** — Toggle between watching one point oscillate over Δt = T and a snapshot in space spanning Δx = λ.
+3. **Intensity, Poynting vector & radiation pressure** — Vary amplitude / distance and see I, **S**, and P_rad respond.
+
 ## How to run
 
 Double-click any `.html` file (or drag it into Chrome / Safari / Firefox). No install required. Use the top navigation in each module to switch between sections.
