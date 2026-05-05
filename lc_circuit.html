@@ -311,7 +311,7 @@ function omegaOf(L_H, C_F) { return 1 / Math.sqrt(L_H * C_F); }
 // Real LC periods at these scales are a few ms — animating at 1:1 is a blur.
 // Slow sim-time by this factor so the default period plays out over ~1.5 s wall clock.
 // Readouts still show the true physical values.
-const TIME_SCALE = 1 / 500;
+const TIME_SCALE = 1 / 3000;
 
 // --------- Section 1: Charge & Current ----------
 (function() {
